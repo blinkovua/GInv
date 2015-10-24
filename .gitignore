@@ -1,0 +1,5 @@
+*~
+*.swp
+config.h
+build/
+CMakeLists.txt.user
