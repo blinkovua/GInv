@@ -1,0 +1,18 @@
+/*!
+@file util/allocator.h
+\brief Allocator
+
+\class GInv::Allocator
+\brief Allocator
+
+\fn  static size_t GInv::Allocator::maxMemory()
+\brief maxMemory
+\fn  static size_t GInv::Allocator::currMemory()
+\brief currMemory
+\fn  static const Timer& GInv::Allocator::timer()
+\brief timer
+\fn  static void GInv::Allocator::timerCont()
+\brief timerCont
+\fn  static void GInv::Allocator::timerStop()
+\brief timerStop
+*/
