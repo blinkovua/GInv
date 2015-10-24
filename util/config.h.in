@@ -1,0 +1,8 @@
+#ifndef GINV_UTIL_CONFIG_H
+#define GINV_UTIL_CONFIG_H
+
+#cmakedefine GINV_UTIL_WIN32
+#cmakedefine GINV_UTIL_GRAPHVIZ
+#cmakedefine GINV_UTIL_ALLOCATOR
+
+#endif // GINV_UTIL_CONFIG_H
