@@ -25,17 +25,17 @@ namespace GInv {
 RandPermutation::RandPermutation(int n):
     mSize(n),
     mPerm(new int[mSize]),
-    mDis(new std::uniform_int_distribution<int>*[mSize-2]) {
+    mDis(new std::uniform_int_distribution<int>*[mSize-1]) {
   assert(mSize > 0);
   for(int i=0; i < mSize; i++)
     mPerm[i] = i;
-  for(int i=mSize-1; i > 1; i--)
-    mDis[i-2] = new std::uniform_int_distribution<int>(0, i-1);
+  for(int i=mSize-1; i > 0; i--)
+    mDis[i-1] = new std::uniform_int_distribution<int>(0, i);
 }
 
 RandPermutation::~RandPermutation() {
-  for(int i=mSize-1; i > 1; i--)
-    delete mDis[i-2];
+  for(int i=mSize-1; i > 0; i--)
+    delete mDis[i-1];
   delete[] mDis;
   delete[] mPerm;
 }

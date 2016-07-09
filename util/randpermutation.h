@@ -28,33 +28,34 @@
 #include <iostream>
 
 namespace GInv {
-  
+
 class RandPermutation {
-  const int                            mSize; 
+  const int                            mSize;
   int                                 *mPerm;
   std::uniform_int_distribution<int> **mDis;
-  
+
 public:
   RandPermutation()=delete;
   explicit RandPermutation(int n);
   RandPermutation(const RandPermutation&)=delete;
   ~RandPermutation();
-  
+
   inline int size() const { return mSize; }
   inline int operator[](int i) const {
     assert(0 <= i && i < mSize);
     return mPerm[i];
   }
 
+  //  Durstenfeld's version the algorithm Fisher–Yates shuffle
   template<class Generator> void operator()(Generator& g) {
-    for(int i=mSize-1; i > 1; i--) {
-      auto j=(*mDis[i-2])(g);
+    for(int i=mSize-1; i > 0; i--) {
+      auto j=(*mDis[i-1])(g);
       auto swap=mPerm[i];
       mPerm[i] = mPerm[j];
       mPerm[j] = swap;
     }
   }
-  
+
   friend std::ostream& operator<<(std::ostream& out, const RandPermutation &a);
 };
 

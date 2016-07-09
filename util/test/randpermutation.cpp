@@ -56,13 +56,13 @@ void TestRandPermutation::tearDown() {
 void TestRandPermutation::test1() {
   std::random_device rd;
   std::default_random_engine gen(rd());
-  
+
   RandPermutation p(mN);
   for(int i=1; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
   for(int k=0; k < mK; k++) {
-    p(gen);  
+    p(gen);
     for(int i=1; i < mN; i++) {
       CPPUNIT_ASSERT(0 <= p[i] < mN);
       for(int j=i+1; j < mN; j++)
@@ -74,13 +74,13 @@ void TestRandPermutation::test1() {
 void TestRandPermutation::test2() {
   std::random_device rd;
   std::mt19937 gen(rd());
-  
+
   RandPermutation p(mN);
   for(int i=1; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
   for(int k=0; k < mK; k++) {
-    p(gen);  
+    p(gen);
     for(int i=1; i < mN; i++) {
       CPPUNIT_ASSERT(0 <= p[i] < mN);
       for(int j=i+1; j < mN; j++)
@@ -92,12 +92,12 @@ void TestRandPermutation::test2() {
 void TestRandPermutation::test3() {
   std::random_device rd;
   std::default_random_engine gen(rd());
-  
+
   RandPermutation p(100000);
   for(int i=1; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
-  p(gen);  
+  p(gen);
   for(int i=1; i < mN; i++) {
     CPPUNIT_ASSERT(0 <= p[i] < mN);
     for(int j=i+1; j < mN; j++)
