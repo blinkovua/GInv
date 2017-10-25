@@ -18,15 +18,15 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_INTEGER_INTEGER_H
-#define GINV_INTEGER_INTEGER_H
+#ifndef GINV_POLY_INTEGER_H
+#define GINV_POLY_INTEGER_H
 
 #include <cassert>
 
 #include <gmp.h>
 
-#include "config.h"
 #include "util/allocator.h"
+#include "config.h"
 
 namespace GInv {
 
@@ -57,31 +57,31 @@ public:
   Integer()=delete;
   explicit Integer(Allocator* allocator):
       mAllocator(allocator) {
-#ifndef GINV_INTEGER_ALLOCATOR
+#ifndef GINV_POLY_INTEGER_ALLOCATOR
     mpz_init(&mMpz);
 #else
     mMpz._mp_alloc = 1;
     mMpz._mp_d = new(mAllocator) mp_limb_t[mMpz._mp_alloc];
     mMpz._mp_size = 0;
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   }
   Integer(const Integer &a)=delete;
   Integer(const Integer &a, Allocator* allocator):
       mAllocator(allocator) {
-#ifndef GINV_INTEGER_ALLOCATOR
+#ifndef GINV_POLY_INTEGER_ALLOCATOR
     mpz_init(&mMpz);
 #else
     mMpz._mp_alloc = max(abs(a.mMpz._mp_size), 1);
     mMpz._mp_d = new(mAllocator) mp_limb_t[mMpz._mp_alloc];
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
     mpz_set(&mMpz, &a.mMpz);
   }
   ~Integer() {
-#ifndef GINV_INTEGER_ALLOCATOR
+#ifndef GINV_POLY_INTEGER_ALLOCATOR
     mpz_clear(&mMpz);
 #else
     mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   }
 
   void swap(Integer& a) {
@@ -92,9 +92,9 @@ public:
     mpz_swap(&mMpz, &a.mMpz);
   }
   void operator=(const Integer& a) {
-#ifdef GINV_INTEGER_ALLOCATOR
+#ifdef GINV_POLY_INTEGER_ALLOCATOR
     reallocate(abs(a.mMpz._mp_size));
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
     mpz_set(&mMpz, &a.mMpz);
   }
   void set_si(signed long a) { mpz_set_si(&mMpz, a); }
@@ -121,4 +121,4 @@ public:
 
 }
 
-#endif // GINV_INTEGER_INTEGER_H
+#endif // GINV_POLY_INTEGER_H

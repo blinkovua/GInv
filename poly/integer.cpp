@@ -26,7 +26,7 @@ size_t Integer::buffer_size=4096;
 char*  Integer::buffer=new char[Integer::buffer_size];
 
 int Integer::set_str(const char *str, int base) {
-#ifndef GINV_INTEGER_ALLOCATOR
+#ifndef GINV_POLY_INTEGER_ALLOCATOR
   int r=mpz_set_str(&mMpz, str, base);
 #else
   __mpz_struct tmp;
@@ -37,25 +37,25 @@ int Integer::set_str(const char *str, int base) {
     mpz_set(&mMpz, &tmp);
   }
   mpz_clear(&tmp);
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   return r;
 }
 
 void Integer::add(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-#ifdef GINV_INTEGER_ALLOCATOR
+#ifdef GINV_POLY_INTEGER_ALLOCATOR
   reallocate(max(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)) + 1);
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   mpz_add(&mMpz, &a.mMpz, &b.mMpz);
 }
 
 void Integer::sub(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-#ifdef GINV_INTEGER_ALLOCATOR
+#ifdef GINV_POLY_INTEGER_ALLOCATOR
   reallocate(max(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)) + 1);
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   mpz_sub(&mMpz, &a.mMpz, &b.mMpz);
 }
 
@@ -63,9 +63,9 @@ void Integer::sub(const Integer& a, const Integer& b) {
 void Integer::mult(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-#ifdef GINV_INTEGER_ALLOCATOR
+#ifdef GINV_POLY_INTEGER_ALLOCATOR
   reallocate(abs(a.mMpz._mp_size) + abs(b.mMpz._mp_size));
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   mpz_mul(&mMpz, &a.mMpz, &b.mMpz);
 }
 
@@ -73,9 +73,9 @@ void Integer::div(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
   assert(a.divisible(b));
-#ifdef GINV_INTEGER_ALLOCATOR
+#ifdef GINV_POLY_INTEGER_ALLOCATOR
   reallocate(abs(a.mMpz._mp_size) - abs(b.mMpz._mp_size) + 1);
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   mpz_divexact(&mMpz, &a.mMpz, &b.mMpz);
 }
 
@@ -83,9 +83,9 @@ void Integer::gcd(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
   assert(a.divisible(b));
-#ifdef GINV_INTEGER_ALLOCATOR
+#ifdef GINV_POLY_INTEGER_ALLOCATOR
   reallocate(abs(a.mMpz._mp_size) - abs(b.mMpz._mp_size) + 1);
-#endif // GINV_INTEGER_ALLOCATOR
+#endif // GINV_POLY_INTEGER_ALLOCATOR
   mpz_divexact(&mMpz, &a.mMpz, &b.mMpz);
 }
 

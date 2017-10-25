@@ -6,7 +6,7 @@ ADD_EXECUTABLE(unittest
 )
 
 TARGET_LINK_LIBRARIES(unittest
-  ginvinteger
+  ginvpoly
   ginvutil
   gmp
   cppunit

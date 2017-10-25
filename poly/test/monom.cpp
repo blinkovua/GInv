@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2009 by Blinkov Yu. A.                                  *
+ *   Copyright (C) 2015 by Blinkov Yu. A.                                  *
  *   BlinkovUA@info.sgu.ru                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -21,18 +21,17 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/config/SourcePrefix.h>
 
-#include <cstdlib>
-#include <ctime>
-
-#include "poly/integer.h"
+#include "poly/monom.h"
 
 using namespace GInv;
 
-class TestInteger: public CPPUNIT_NS::TestFixture {
-  CPPUNIT_TEST_SUITE(TestInteger);
+class MonomPoly: public CPPUNIT_NS::TestFixture {
+  CPPUNIT_TEST_SUITE(MonomPoly);
   CPPUNIT_TEST(test1);
   CPPUNIT_TEST(test2);
   CPPUNIT_TEST_SUITE_END();
+
+  int n;
 
 public:
   void setUp();
@@ -40,33 +39,63 @@ public:
 
   void test1();
   void test2();
+//   void test3();
+//   void test4();
+//   void test5();
+//   void test6();
+//   void test7();
+//   void test8();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(TestInteger);
+CPPUNIT_TEST_SUITE_REGISTRATION(MonomPoly);
 
-void TestInteger::setUp() {
+void MonomPoly::setUp() {
+  n = 9;
 }
 
-void TestInteger::tearDown() {
+void MonomPoly::tearDown() {
 }
 
-
-void TestInteger::test1() {
+void MonomPoly::test1() {
   Allocator allocator[1];
-
-  Integer a(allocator);
-  std::cout << a.get_str(16) << std::endl;
-  a.set_si(-12652);
-
-  Integer b(allocator);
-  CPPUNIT_ASSERT(b.set_str("-12652162536153671253192376141540340646456346", 10) == 0);
-  std::cout << b.get_str(10) << std::endl;
-
-  Integer c(allocator);
-  c.add(b, b);
-  std::cout << c.get_str(10) << std::endl;
+  Monom *v=new Monom[n];
+  for(int i=0; i < n; i++) {
+    v[i] = Monom(i, n, -1, allocator);
+    CPPUNIT_ASSERT(v[i]);
+    CPPUNIT_ASSERT(!v[i].isZero());
+    CPPUNIT_ASSERT(v[i].degree() == 1);
+    CPPUNIT_ASSERT(v[i][i] == 1);
+  }
+  for(int i=0; i < n; i++) {
+    Monom m;
+    m = v[i]*v[0]*v[i]*v[1].pow(7);
+    std::cerr << m << " -> ";
+    CPPUNIT_ASSERT(!m.isZero());
+    CPPUNIT_ASSERT(m.degree() == 10);
+    CPPUNIT_ASSERT(v[i] | m);
+    CPPUNIT_ASSERT(!(m | v[i]));
+    m = m / v[i];
+    m = m / v[0];
+    std::cerr << m << std::endl;
+  }
+  delete[] v;
 }
 
-void TestInteger::test2() {
+void MonomPoly::test2() {
+  Allocator allocator[1];
+  Monom *v=new Monom[n];
+  for(int i=0; i < n; i++) {
+    v[i] = Monom(i, n, -1, allocator);
+    CPPUNIT_ASSERT(v[i]);
+    CPPUNIT_ASSERT(!v[i].isZero());
+    CPPUNIT_ASSERT(v[i].degree() == 1);
+    CPPUNIT_ASSERT(v[i][i] == 1);
+  }
+  for(int i=0; i < n; i++) {
+    Monom m;
+    m = v[i]*v[0]*v[i]*v[1].pow(7);
+    CPPUNIT_ASSERT(!m.isZero());
+    CPPUNIT_ASSERT(m.degree() == 10);
+  }
+  delete[] v;
 }
-
