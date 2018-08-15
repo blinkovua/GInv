@@ -29,18 +29,38 @@
 
 namespace GInv {
 
-struct Wrap {
+class Wrap {
   Monom       mLm;
   Monom       mAnsector;
+  bool*       mNM;
+  bool*       mBuild;
 
+public:  
   Wrap()=delete;
   Wrap(const Wrap& a)=delete;
   Wrap(Monom m, Allocator* allocator):
-      mLm(m, allocator), mAnsector(m, allocator) {}
+      mLm(m, allocator), 
+      mAnsector(m, allocator),
+      mNM(new(mAllocator) bool[m.size()]),
+      mBuild(new(mAllocator) bool[m.size()]) {
+    for(int i=0; i < m.size(); i++) {
+      mNM[i] = false;
+      mBuild[i] = false;
+    }
+  }
   Wrap(const Wrap* ansector, int var, Allocator* allocator):
-      mLm(Wrap->mLm, var, allocator),
-      mAnsector(Wrap->mAnsector, allocator) {}
-  ~Wrap() {}
+      mLm(m, v, allocator), 
+      mAnsector(m, allocator),
+      mNM(new(mAllocator) bool[m.size()]),
+      mBuild(new(mAllocator) bool[m.size()]) {
+    for(int i=0; i < m.size(); i++) {
+      mNM[i] = false;
+      mBuild[i] = false;
+  }
+  ~Wrap() {
+    mAllocator->dealloc(mNM, mLm.size());
+    mAllocator->dealloc(mBuild, mLm.size());
+  }
 };
 
 
@@ -59,9 +79,9 @@ class Janet {
     ~Node() {}
   };
 
-private:
   typedef Node* Link;
 
+public:  
   class ConstIterator {
     Link i;
 
@@ -81,6 +101,7 @@ private:
     bool assertValid() const;
   };
 
+private:  
   class Iterator {
     Link *i;
 
@@ -99,22 +120,37 @@ private:
     operator ConstIterator() const { return *i; }
     Wrap*& wrap() const { assert(*i); return (*i)->mWrap; }
     Monom::Variable degree() const { assert(i); return (*i)->mDeg; }
-    void build(int d, Monom::Variable var, Wrap *wrap);
-    void del();
-    void clear();
+    void build(int d, Monom::Variable var, Wrap *wrap, Allocator* allocator);
+    void del(Allocator* allocator) {
+      Link tmp = *i;
+      assert(tmp);
+      *i = tmp->mNextDeg;
+      allocator->destroy(tmp);
+    }
+    void clear(Allocator* allocator);
   };
 
   Allocator*  mAllocator;
+  int         mPos;
   Link*       mRoot;
 
 public:
-  ~Janet();
+  explicit Janet(Allocator* allocator):
+      mAllocator(allocator),
+      mPos(0),
+      mRoot(nullptr) {
+  }
+  ~Janet() {
+    if (mRoot) {
+      Janet::Iterator j(mRoot);
+      j.clear();
+    }
+  }
 
   Wrap* find(const Monom &m) const;
-  void insert(Wrap *wrap, ISetQ &setQ);
   void insert(Wrap *wrap);
-  void update(Wrap *wrap, ISetQ &setQ);
-  void clear();
+  void insert(Wrap *wrap);
+  void update(Wrap *wrap);
 };
 
 }

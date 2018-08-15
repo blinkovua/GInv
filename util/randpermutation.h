@@ -50,9 +50,9 @@ public:
   template<class Generator> void operator()(Generator& g) {
     for(int i=mSize-1; i > 0; i--) {
       auto j=(*mDis[i-1])(g);
-      auto swap=mPerm[i];
-      mPerm[i] = mPerm[j];
-      mPerm[j] = swap;
+      auto swap=mPerm[j];
+      mPerm[j] = mPerm[i];
+      mPerm[i] = swap;
     }
   }
 

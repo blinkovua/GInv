@@ -46,7 +46,7 @@ public:
 CPPUNIT_TEST_SUITE_REGISTRATION(TestRandPermutation);
 
 void TestRandPermutation::setUp() {
-  mN = 20;
+  mN = 4;
   mK = mN*mN;
 }
 

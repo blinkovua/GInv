@@ -22,7 +22,7 @@
 
 namespace GInv {
 
-void Janet::Iterator::build(unsigned d, int var, Wrap *wrap) {
+void Janet::Iterator::build(unsigned d, int var, Wrap *wrap, Allocator* allocator) {
   assert(d >= wrap->lm()[var]);
   Link r =  new Janet::Node(wrap->lm()[var]);
   Link j = r;
@@ -39,13 +39,13 @@ void Janet::Iterator::build(unsigned d, int var, Wrap *wrap) {
   *i = r;
 }
   
-void Janet::Iterator::clear() {
+void Janet::Iterator::clear(Allocator* allocator) {
   while (nextDeg()) {
     assert(nextVar());
-    Janet::Iterator((*i)->mNextVar).clear();
-    del();
+    Janet::Iterator((*i)->mNextVar).clear(allocator);
+    del(allocator);
   }
-  del();
+  del(allocator);
 }
 
 void Janet::ConstIterator::prolong(int var) {

@@ -31,7 +31,7 @@ namespace GInv {
 
 class BPoly {
 protected:
-  Allocator*          mAllocator;
+  Allocator*           mAllocator;
   List<const BMonom*>  mList;
 
   inline void clear() {
