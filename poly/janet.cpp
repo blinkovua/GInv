@@ -22,14 +22,14 @@
 
 namespace GInv {
 
-void Janet::Iterator::build(unsigned d, int var, Wrap *wrap, Allocator* allocator) {
+void Janet::Iterator::build(int d, Monom::Variable var, Wrap *wrap, Allocator* allocator) {
   assert(d >= wrap->lm()[var]);
-  Link r =  new Janet::Node(wrap->lm()[var]);
+  Link r =  new(allocator) Janet::Node(wrap->lm()[var]);
   Link j = r;
   while(d > wrap->lm()[var]) {
     d -= wrap->lm()[var];
     ++var;
-    j->mNextVar = new Janet::Node(wrap->lm()[var]);
+    j->mNextVar = new(allocator) Janet::Node(wrap->lm()[var]);
     j = j->mNextVar;
   }
   j->mWrap = wrap;
@@ -38,7 +38,7 @@ void Janet::Iterator::build(unsigned d, int var, Wrap *wrap, Allocator* allocato
   r->mNextDeg = *i;
   *i = r;
 }
-  
+
 void Janet::Iterator::clear(Allocator* allocator) {
   while (nextDeg()) {
     assert(nextVar());
@@ -48,30 +48,82 @@ void Janet::Iterator::clear(Allocator* allocator) {
   del(allocator);
 }
 
-void Janet::ConstIterator::prolong(int var) {
+// void Janet::ConstIterator::prolong(int var) {
+//   while(nextDeg()) {
+//     assert(nextVar());
+//     nextVar().prolong(var);
+//     deg();
+//   }
+//   if (nextVar())
+//     nextVar().prolong(q, var);
+//   else
+//     wrap()->setNM(var);
+// }
+
+bool Janet::ConstIterator::assertValid() {
   while(nextDeg()) {
-    assert(nextVar());
-    nextVar().prolong(var);
+    if (degree() >= nextDeg().degree())
+      return false;
+    if (!nextVar())
+      return false;
+    if (!nextVar().assertValid())
+      return false;
     deg();
   }
   if (nextVar())
-    nextVar().prolong(q, var);
-  else 
-    wrap()->setNM(var);
+    return nextVar().assertValid();
+  else
+    return wrap() != nullptr;
 }
 
-void Janet::ConstIterator::assertValid(const char* fileName, int fileLine) {
-  while(nextDeg()) {
-    assert2(fileName, fileLine, degree() < nextDeg().degree());
-    assert2(fileName, fileLine, nextVar());
-    nextVar().assertValid(fileName, fileLine);
-    deg();
-  }
-  if (nextVar())
-    nextVar().assertValid(fileName, fileLine);
-  else
-    assert2(fileName, fileLine, wrap());
+#ifdef GINV_POLY_GRAPHVIZ
+static Agnode_t* drawLeaf(Agraph_t *g) {
+  char buffer[256];
+  static int leaf=0;
+  ++leaf;
+  sprintf(buffer, "nullptr%d", leaf);
+  Agnode_t* r = agnode(g, buffer, 1);
+  agsafeset(r, (char*)"label", (char*)"nullptr", (char*)"");
+  agsafeset(r, (char*)"shape", (char*)"box", (char*)"");
+  return r;
 }
+
+static Agnode_t* draw(Agraph_t *g, RBTree::Node* j) {
+  char buffer[256];
+  Agnode_t* r;
+  if (!j)
+    r = drawLeaf(g);
+  else {
+    str(buffer, j->mKey);
+    r = agnode(g, buffer, 1);
+    if (j->mColor == Red)
+      agsafeset(r, (char*)"color", (char*)"firebrick1", (char*)"");
+    Agnode_t* node=r;
+    do {
+      Agnode_t* left=draw(g, j->mLeft);
+      Agnode_t* right;
+      if (!j->mRight)
+        right = drawLeaf(g);
+      else {
+        str(buffer, j->mRight->mKey);
+        right = agnode(g, buffer, 1);
+        if (j->mRight->mColor == Red)
+          agsafeset(right, (char*)"color", (char*)"firebrick1", (char*)"");
+      }
+      Agedge_t *e=agedge(g, node, left, (char*)"", 1);
+      agsafeset(e, (char*)"style", (char*)"solid", (char*)"");
+      agsafeset(e, (char*)"dir", (char*)"forward", (char*)"");
+      e = agedge(g, node, right, (char*)"", 1);
+      agsafeset(e, (char*)"style", (char*)"solid", (char*)"");
+      agsafeset(e, (char*)"dir", (char*)"forward", (char*)"");
+
+      node = right;
+      j = j->mRight;
+    } while(j);
+  }
+  return r;
+}
+#endif // GINV_POLY_GRAPHVIZ
 
 Wrap* Janet::find(const Monom &m) const {
   assert(mRoot == nullptr || mPos == m.pos());
@@ -113,7 +165,7 @@ Wrap* Janet::find(const Monom &m) const {
   return wrap;
 }
 
-  
+
 }
 
 // TODO
@@ -170,11 +222,11 @@ void Janet::insert(Wrap *wrap) {
 void Janet::insert1(Wrap *wrap) {
   assert(wrap != nullptr);
   assert(find(wrap->lm()) == nullptr);
-  
+
   Link &root = mRoot;
   unsigned d = wrap->lm().degree();
   Janet::Iterator j(root);
-  
+
   if (root == nullptr)
     j.build(d, 0, wrap);
   else {

@@ -35,8 +35,8 @@ class Allocator {
   static size_t  sMaxMemory;
   static Timer   sTimer;
 
-  size_t         mAlloc;
-  size_t         mSize;
+  size_t         mAlloc=0;
+  size_t         mSize=0;
 
 #ifdef GINV_UTIL_ALLOCATOR
   struct Node {
@@ -51,9 +51,9 @@ class Allocator {
     ~Node() { free(mPointer); }
   };
 
-  Node*  mRoot;
-  size_t mNodeAlloc;
-  size_t mNodeSize;
+  Node*  mRoot=nullptr;
+  size_t mNodeAlloc=0;
+  size_t mNodeSize=0;
 #endif // GINV_UTIL_ALLOCATOR
 
 public:
@@ -64,7 +64,7 @@ public:
   static void timerCont() { sTimer.cont(); }
   static void timerStop() { sTimer.stop(); }
 
-  Allocator();
+  Allocator() {}
   Allocator(const Allocator& a);
   ~Allocator();
 

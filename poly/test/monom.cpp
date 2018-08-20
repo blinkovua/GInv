@@ -57,28 +57,15 @@ void MonomPoly::tearDown() {
 }
 
 void MonomPoly::test1() {
-//   Allocator allocator[1];
-//   Monom **v=new *Monom[n];
-//   for(int i=0; i < n; i++) {
-//     v[i] = new Monom(i, n, -1, allocator);
-//     CPPUNIT_ASSERT(v[i]);
-//     CPPUNIT_ASSERT(!v[i].isZero());
-//     CPPUNIT_ASSERT(v[i].degree() == 1);
-//     CPPUNIT_ASSERT(v[i][i] == 1);
-//   }
-//   for(int i=0; i < n; i++) {
-//     Monom m;
-//     m = v[i]*v[0]*v[i]*v[1].pow(7);
-//     std::cerr << m << " -> ";
-//     CPPUNIT_ASSERT(!m.isZero());
-//     CPPUNIT_ASSERT(m.degree() == 10);
-//     CPPUNIT_ASSERT(v[i] | m);
-//     CPPUNIT_ASSERT(!(m | v[i]));
-//     m = m / v[i];
-//     m = m / v[0];
-//     std::cerr << m << std::endl;
-//   }
-//   delete[] v;
+  Allocator allocator[1];
+  Monom u(0, 5,-1, allocator),
+        v(1, 5,-1, allocator),
+        x(2, 5,-1, allocator),
+        y(3, 5,-1, allocator),
+        z(4, 5,-1, allocator);
+  Monom m(x*y*z.pow(4));
+  std::cerr << m << std::endl;
+  CPPUNIT_ASSERT(m.degree() == 6);
 }
 
 void MonomPoly::test2() {

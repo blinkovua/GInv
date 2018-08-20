@@ -26,20 +26,7 @@ namespace GInv {
 
 const size_t memoryPageSize=4096;
 
-Allocator::Allocator():
-    mAlloc(0),
-    mSize(0),
-    mRoot(nullptr),
-    mNodeAlloc(0),
-    mNodeSize(0) {
-}
-
-Allocator::Allocator(const Allocator& a):
-    mAlloc(0),
-    mSize(0),
-    mRoot(nullptr),
-    mNodeAlloc(0),
-    mNodeSize(0) {
+Allocator::Allocator(const Allocator& a) {
   mNodeAlloc = memoryPageSize;
   mAlloc = mNodeAlloc;
   mRoot = new Node(mNodeAlloc);
@@ -108,14 +95,7 @@ bool Allocator::isGC() const {
 
 #else
 
-Allocator::Allocator():
-    mAlloc(0),
-    mSize(0) {
-}
-
-Allocator::Allocator(const Allocator& a):
-    mAlloc(0),
-    mSize(0) {
+Allocator::Allocator(const Allocator& a) {
 }
 
 Allocator::~Allocator() {

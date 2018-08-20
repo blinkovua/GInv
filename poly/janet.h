@@ -27,39 +27,64 @@
 
 #include "config.h"
 
+#ifdef GINV_POLY_GRAPHVIZ
+  #include <cstdlib>
+  #include <graphviz/gvc.h>
+
+  inline void str(char buffer[256], int a) {
+    sprintf(buffer, "%d", a);
+  }
+#endif // GINV_POLY_GRAPHVIZ
+
 namespace GInv {
 
 class Wrap {
+  Allocator*  mAllocator;
   Monom       mLm;
   Monom       mAnsector;
   bool*       mNM;
   bool*       mBuild;
 
-public:  
+public:
   Wrap()=delete;
   Wrap(const Wrap& a)=delete;
   Wrap(Monom m, Allocator* allocator):
-      mLm(m, allocator), 
+      mAllocator(allocator),
+      mLm(m, allocator),
       mAnsector(m, allocator),
-      mNM(new(mAllocator) bool[m.size()]),
-      mBuild(new(mAllocator) bool[m.size()]) {
-    for(int i=0; i < m.size(); i++) {
+      mNM(new(allocator) bool[m.size()]),
+      mBuild(new(allocator) bool[m.size()]) {
+    for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
       mBuild[i] = false;
     }
   }
-  Wrap(const Wrap* ansector, int var, Allocator* allocator):
-      mLm(m, v, allocator), 
-      mAnsector(m, allocator),
-      mNM(new(mAllocator) bool[m.size()]),
-      mBuild(new(mAllocator) bool[m.size()]) {
-    for(int i=0; i < m.size(); i++) {
+  Wrap(const Wrap* ansector, Monom::Variable var, Allocator* allocator):
+      mAllocator(allocator),
+      mLm(ansector->mAnsector, var, allocator),
+      mAnsector(ansector->mAnsector, allocator),
+      mNM(new(allocator) bool[ansector->mLm.size()]),
+      mBuild(new(allocator) bool[ansector->mLm.size()]) {
+    assert(ansector->mNM[var] && !ansector->mBuild[var]);
+    for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
       mBuild[i] = false;
+    }
   }
   ~Wrap() {
     mAllocator->dealloc(mNM, mLm.size());
     mAllocator->dealloc(mBuild, mLm.size());
+  }
+
+  const Monom& lm() const { return mLm; }
+  const Monom& ansector() const { return mAnsector; }
+  bool NM(int var) const {
+    assert(0 <= var && var < mLm.size());
+    return mNM[var];
+  }
+  bool build(int var) const {
+    assert(0 <= var && var < mLm.size());
+    return mBuild[var];
   }
 };
 
@@ -81,7 +106,7 @@ class Janet {
 
   typedef Node* Link;
 
-public:  
+public:
   class ConstIterator {
     Link i;
 
@@ -98,10 +123,10 @@ public:
 
 //     void prolong(ISetQ &q, int var);
 
-    bool assertValid() const;
+    bool assertValid();
   };
 
-private:  
+private:
   class Iterator {
     Link *i;
 
@@ -132,7 +157,12 @@ private:
 
   Allocator*  mAllocator;
   int         mPos;
-  Link*       mRoot;
+  Link        mRoot;
+
+#ifdef GINV_POLY_GRAPHVIZ
+  static Agnode_t* drawLeaf(Agraph_t *g);
+  static Agnode_t* draw(Agraph_t *g, Link j);
+#endif // GINV_POLY_GRAPHVIZ
 
 public:
   explicit Janet(Allocator* allocator):
@@ -143,14 +173,26 @@ public:
   ~Janet() {
     if (mRoot) {
       Janet::Iterator j(mRoot);
-      j.clear();
+      j.clear(mAllocator);
     }
   }
 
   Wrap* find(const Monom &m) const;
   void insert(Wrap *wrap);
-  void insert(Wrap *wrap);
+//   void insert(Wrap *wrap);
   void update(Wrap *wrap);
+
+#ifdef GINV_POLY_GRAPHVIZ
+  void draw(const char* format, const char* filename) const {
+    GVC_t *gvc=gvContext();
+    Agraph_t *g=agopen((char*)"Janet",  Agdirected, (Agdisc_t*)nullptr);
+    draw(g, mRoot);
+    gvLayout(gvc, g, (char*)"dot");
+    gvRenderFilename(gvc, g, format, filename);
+    gvFreeLayout(gvc, g);
+    agclose(g);
+  }
+#endif // GINV_POLY_GRAPHVIZ
 };
 
 }
