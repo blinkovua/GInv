@@ -28,12 +28,8 @@
 #include "config.h"
 
 #ifdef GINV_POLY_GRAPHVIZ
-  #include <cstdlib>
+  #include <sstream>
   #include <graphviz/gvc.h>
-
-  inline void str(char buffer[256], int a) {
-    sprintf(buffer, "%d", a);
-  }
 #endif // GINV_POLY_GRAPHVIZ
 
 namespace GInv {
@@ -48,7 +44,7 @@ class Wrap {
 public:
   Wrap()=delete;
   Wrap(const Wrap& a)=delete;
-  Wrap(Monom m, Allocator* allocator):
+  Wrap(const Monom& m, Allocator* allocator):
       mAllocator(allocator),
       mLm(m, allocator),
       mAnsector(m, allocator),
@@ -160,8 +156,7 @@ private:
   Link        mRoot;
 
 #ifdef GINV_POLY_GRAPHVIZ
-  static Agnode_t* drawLeaf(Agraph_t *g);
-  static Agnode_t* draw(Agraph_t *g, Link j);
+  static Agnode_t* draw(Agraph_t *g, Link j, Monom::Variable var);
 #endif // GINV_POLY_GRAPHVIZ
 
 public:
@@ -175,18 +170,20 @@ public:
       Janet::Iterator j(mRoot);
       j.clear(mAllocator);
     }
+    assert(mRoot == nullptr);
   }
 
   Wrap* find(const Monom &m) const;
-  void insert(Wrap *wrap);
 //   void insert(Wrap *wrap);
-  void update(Wrap *wrap);
+  void insert(Wrap *wrap);
+//   void update(Wrap *wrap);
 
 #ifdef GINV_POLY_GRAPHVIZ
   void draw(const char* format, const char* filename) const {
     GVC_t *gvc=gvContext();
     Agraph_t *g=agopen((char*)"Janet",  Agdirected, (Agdisc_t*)nullptr);
-    draw(g, mRoot);
+    if (mRoot)
+      draw(g, mRoot, 0);
     gvLayout(gvc, g, (char*)"dot");
     gvRenderFilename(gvc, g, format, filename);
     gvFreeLayout(gvc, g);

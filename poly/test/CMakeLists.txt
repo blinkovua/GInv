@@ -12,3 +12,13 @@ TARGET_LINK_LIBRARIES(unittest
   gmp
   cppunit
 )
+
+IF(BUILD_GRAPHVIZ)
+  ADD_EXECUTABLE(graphtest
+    graph.cpp
+  )
+  TARGET_LINK_LIBRARIES(graphtest
+    ginvpoly
+    ginvutil
+  )
+ENDIF(BUILD_GRAPHVIZ)

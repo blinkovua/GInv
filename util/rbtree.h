@@ -27,12 +27,8 @@
 #include "config.h"
 
 #ifdef GINV_UTIL_GRAPHVIZ
-  #include <cstdlib>
+  #include <sstream>
   #include <graphviz/gvc.h>
-
-  inline void str(char buffer[256], int a) {
-    sprintf(buffer, "%d", a);
-  }
 #endif // GINV_UTIL_GRAPHVIZ
 
 #include "allocator.h"
@@ -386,24 +382,25 @@ protected:
 
 #ifdef GINV_UTIL_GRAPHVIZ
   static Agnode_t* drawLeaf(Agraph_t *g) {
-    char buffer[256];
     static int leaf=0;
     ++leaf;
-    sprintf(buffer, "nullptr%d", leaf);
-    Agnode_t* r = agnode(g, buffer, 1);
+    std::stringstream ss;
+    ss << "nullptr" << leaf;
+    Agnode_t* r = agnode(g, (char*)ss.str().c_str(), 1);
     agsafeset(r, (char*)"label", (char*)"nullptr", (char*)"");
     agsafeset(r, (char*)"shape", (char*)"box", (char*)"");
     return r;
   }
 
   static Agnode_t* draw(Agraph_t *g, RBTree::Node* j) {
-    char buffer[256];
+    std::stringstream ss;
     Agnode_t* r;
     if (!j)
       r = drawLeaf(g);
     else {
-      str(buffer, j->mKey);
-      r = agnode(g, buffer, 1);
+      ss << j->mKey;
+      r = agnode(g, (char*)ss.str().c_str(), 1);
+      ss.str("");
       if (j->mColor == Red)
         agsafeset(r, (char*)"color", (char*)"firebrick1", (char*)"");
       Agnode_t* node=r;
@@ -413,8 +410,9 @@ protected:
         if (!j->mRight)
           right = drawLeaf(g);
         else {
-          str(buffer, j->mRight->mKey);
-          right = agnode(g, buffer, 1);
+          ss << j->mRight->mKey;
+          right = agnode(g, (char*)ss.str().c_str(), 1);
+          ss.str("");
           if (j->mRight->mColor == Red)
             agsafeset(right, (char*)"color", (char*)"firebrick1", (char*)"");
         }
