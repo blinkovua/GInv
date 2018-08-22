@@ -225,6 +225,49 @@ void Janet::insert(Wrap *wrap) {
   assert(Janet::ConstIterator(root).assertValid());
 }
 
+void Janet::setNM(Wrap *wrap) {
+  assert(wrap != nullptr);
+  assert(find(wrap->lm()) == nullptr);
+
+  Link &root = mRoot;
+  unsigned d = wrap->lm().degree();
+  Janet::Iterator j(root);
+
+  if (root == nullptr) {
+    mPos = wrap->lm().pos();
+    j.build(d, 0, wrap, mAllocator);
+  }
+  else {
+    int var = 0;
+    do {
+      while(j.degree() < wrap->lm()[var] && j.nextDeg())
+        j.deg();
+
+      if (j.degree() > wrap->lm()[var]) {
+        wrap->setNM(var);
+        j.build(d, var, wrap, mAllocator);
+        ++var;
+        break;
+      }
+      else if (j.degree() == wrap->lm()[var]) {
+        if (j.nextDeg())
+          wrap->setNM(var);
+        d -= wrap->lm()[var];
+        ++var;
+        j.var();
+      }
+      else {
+        Janet::ConstIterator(j).nextVar().setNM(var);
+        j.deg();
+        j.build(d, var, wrap, mAllocator);
+        break;
+      }
+    } while(true);
+  }
+  assert(find(wrap->lm()) != nullptr);
+  assert(Janet::ConstIterator(root).assertValid());
+}
+
 // void Janet::insert(Wrap *wrap) {
 //   assert(wrap != nullptr);
 //   assert(find(wrap->lm()) == nullptr);
