@@ -56,8 +56,8 @@ int main(int argc, char *argv[]) {
             d(5),  // максимальная степень переменной
             l(12); // число мономов
   std::random_device rd;          
-  std::default_random_engine gen(rd());
-//   std::default_random_engine gen;
+//   std::default_random_engine gen(rd());
+  std::default_random_engine gen;
   std::uniform_int_distribution<int> dis(0, d);
   
   Allocator allocator[1];

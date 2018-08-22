@@ -190,6 +190,7 @@ public:
   Wrap* find(const Monom &m) const;
 //   void insert(Wrap *wrap);
   void insert(Wrap *wrap);
+  void setNM(Wrap *wrap);
 //   void update(Wrap *wrap);
 
 #ifdef GINV_POLY_GRAPHVIZ
