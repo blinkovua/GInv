@@ -117,7 +117,7 @@ Monom::Monom(const Monom& a, const Monom& b, Allocator* allocator):
 void Monom::swap(Monom& a) {
   assert(this != &a);
   assert(mSize == a.mSize);
-  
+
   auto tmp1=mAllocator;
   mAllocator = a.mAllocator;
   a.mAllocator = tmp1;
@@ -136,7 +136,7 @@ void Monom::swap(Monom& a) {
 
   auto tmp3=mVariables;
   mVariables = a.mVariables;
-  a.mVariables = tmp3;  
+  a.mVariables = tmp3;
 }
 
 void Monom::operator=(const Monom &a) {
@@ -148,7 +148,20 @@ void Monom::operator=(const Monom &a) {
   const Variable* const iend=mVariables+mSize;
   do {
     *i++ = *ia++;
-  } while(i < iend);  
+  } while(i < iend);
+}
+
+void Monom::operator*=(const Monom& a) {
+  assert(mSize == a.mSize);
+  assert(mPos == -1 || a.mPos == -1);
+  mDegree +=a.mDegree;
+  Monom::Variable *i=mVariables;
+  const Monom::Variable* ia=a.mVariables;
+  const Monom::Variable* const iend=mVariables+mSize;
+  do {
+    *i++ += *ia++;
+  } while(i < iend);
+  assert(assertValid());
 }
 
 Monom Monom::operator*(const Monom& a) {
@@ -166,7 +179,7 @@ Monom Monom::operator*(const Monom& a) {
   const Monom::Variable* const irend=r.mVariables+r.mSize;
   do {
     *ir++ = *i++ + *ia++;
-  } while(ir < irend);  
+  } while(ir < irend);
   assert(r.assertValid());
   return r;
 }
@@ -181,7 +194,7 @@ Monom Monom::pow(int n) const {
   const Variable* const irend=r.mVariables+r.mSize;
   do {
     *ir++ = (*i++)*n;
-  } while(ir < irend);  
+  } while(ir < irend);
   assert(r.assertValid());
   return r;
 }
@@ -196,12 +209,12 @@ bool Monom::operator|(const Monom& a) const {
     const Monom::Variable* const iend=mVariables+mSize;
     do {
       r = *i++ <= *ia++;
-    } while(r && i < iend);  
+    } while(r && i < iend);
   }
   return r;
 }
 
- 
+
 Monom Monom::operator/(const Monom& a) {
   assert(a | *this);
   Monom r(mSize, mAllocator);
@@ -214,7 +227,7 @@ Monom Monom::operator/(const Monom& a) {
   const Monom::Variable* const irend=r.mVariables+r.mSize;
   do {
     *ir++ = *i++ - *ia++;
-  } while(ir < irend);  
+  } while(ir < irend);
   assert(r.assertValid());
   return r;
 }
@@ -232,7 +245,7 @@ int Monom::lex(const Monom& a) const {
     }
     ++i;
     ++ia;
-  } while(i < iend);  
+  } while(i < iend);
   return r;
 }
 
@@ -278,7 +291,7 @@ int Monom::alex(const Monom& a) const {
       }
       ++i;
       ++ia;
-    } while(i < iend);  
+    } while(i < iend);
   }
   return r;
 }
@@ -303,7 +316,7 @@ bool Monom::assertValid() const {
     Variable sum=0;
     do {
       sum += *i++;
-    } while(i < iend);  
+    } while(i < iend);
     r = r && sum == mDegree;
   }
   return r;

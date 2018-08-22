@@ -91,6 +91,7 @@ public:
     mPos = pos;
   }
 
+  void operator*=(const Monom& a);
   Monom operator*(const Monom& a);
   Monom pow(int n) const;
   bool operator|(const Monom& a) const;
