@@ -62,6 +62,7 @@ public:
       mNM(new(allocator) bool[ansector->mLm.size()]),
       mBuild(new(allocator) bool[ansector->mLm.size()]) {
     assert(ansector->mNM[var] && !ansector->mBuild[var]);
+    ansector->mBuild[var] = true;
     for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
       mBuild[i] = false;
@@ -74,14 +75,25 @@ public:
 
   const Monom& lm() const { return mLm; }
   const Monom& ansector() const { return mAnsector; }
+  bool isGB() const { return mAnsector.degree() == mLm.degree(); }
+  
+  void setNM(int var) const {
+    assert(0 <= var && var < mLm.size());
+    mNM[var] = true;
+  }
   bool NM(int var) const {
     assert(0 <= var && var < mLm.size());
     return mNM[var];
   }
+
   bool build(int var) const {
     assert(0 <= var && var < mLm.size());
     return mBuild[var];
   }
+//   bool setBuild(int var) const {
+//     assert(0 <= var && var < mLm.size());
+//     mBuild[var] = true;
+//   }
 };
 
 
@@ -117,7 +129,7 @@ public:
     Wrap* wrap() const { assert(i); return i->mWrap; }
     Monom::Variable degree() const { assert(i); return i->mDeg; }
 
-//     void prolong(ISetQ &q, int var);
+    void setNM(Monom::Variable var);
 
     bool assertValid();
   };
@@ -173,6 +185,8 @@ public:
     assert(mRoot == nullptr);
   }
 
+  Janet::ConstIterator begin() const { return mRoot; }
+  
   Wrap* find(const Monom &m) const;
 //   void insert(Wrap *wrap);
   void insert(Wrap *wrap);

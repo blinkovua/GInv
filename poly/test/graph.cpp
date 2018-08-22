@@ -19,61 +19,89 @@
  ***************************************************************************/
 
 #include <cstdlib>
+#include <sstream>
+#include <random>
+
 #include <graphviz/gvc.h>
 
+#include "util/list.h"
 #include "poly/janet.h"
 
 using namespace GInv;
 
+int prolong(Janet::ConstIterator i, Janet &j, List<Wrap*> &q, Allocator* allocator) {
+  int r = 0;
+  while(i.nextDeg()) {
+    assert(i.nextVar());
+    r += prolong(i.nextVar(), j, q, allocator);
+    i.deg();
+  }
+  if (i.nextVar())
+    r += prolong(i.nextVar(), j, q, allocator);
+  else {
+    for(int k=0; k < i.wrap()->lm().size(); k++)
+      if (i.wrap()->NM(k) && !i.wrap()->build(k)) {
+        Wrap *w = new(allocator) Wrap(i.wrap(), k, allocator);
+        if (!j.find(w->lm()))
+          j.insert(w);
+        q.push(w);
+        ++r;
+      }
+  }
+  return r;
+}
+
 int main(int argc, char *argv[]) {
+  const int n(6),  // число переменных
+            d(5),  // максимальная степень переменной
+            l(12); // число мономов
+  std::random_device rd;          
+  std::default_random_engine gen(rd());
+//   std::default_random_engine gen;
+  std::uniform_int_distribution<int> dis(0, d);
+  
   Allocator allocator[1];
-  Allocator allocator1[1];
-  Monom var[5] = {
-    {0, 5,-1, allocator},
-    {1, 5,-1, allocator},
-    {2, 5,-1, allocator},
-    {3, 5,-1, allocator},
-    {4, 5,-1, allocator},
-  };
+  Monom *var[n];
+  for(int i=0; i < n; i++)
+    var[i] = new(allocator) Monom(i, n,-1, allocator);
 
-  const int n=6;
-  Monom::Variable a[n][5] = {
-    {1, 0, 1, 1, 4},
-    {3, 0, 2, 0, 1},
-    {0, 0, 4, 1, 0},
-    {0, 0, 3, 0, 2},
-    {0, 0, 1, 3, 1},
-    {1, 0, 2, 0, 3},
-  };
-
-  Monom m[n] = {
-    {5, -1, allocator},
-    {5, -1, allocator},
-    {5, -1, allocator},
-    {5, -1, allocator},
-    {5, -1, allocator},
-    {5, -1, allocator},
-  };
-
-  for(int i=0; i < n; i++) {
-    for(int k=0; k < 5; k++)
-      m[i] *= var[k].pow(a[i][k]);
-    std::cerr << m[i] << std::endl;
+  Monom *m[l];
+  for(int k=0; k < l; k++) {
+    m[k] = new(allocator) Monom(n,-1, allocator);
+    for(int i=0; i < n; i++) 
+      *m[k] *= var[i]->pow(dis(gen));
+    std::cerr << *m[k] << std::endl;
   }
 
-  Wrap w[n] = {
-    {m[0], allocator},
-    {m[1], allocator},
-    {m[2], allocator},
-    {m[3], allocator},
-    {m[4], allocator},
-    {m[5], allocator},
-  };
-
+  List<Wrap*> q(allocator);
   Janet j(allocator);
-  for(int i=0; i < n; i++)
-    j.insert(&w[i]);
+  for(int k=0; k < l; k++) {
+    Wrap *w = new(allocator) Wrap(*m[k], allocator);
+    if (!j.find(*m[k]))
+      j.insert(w);
+    q.push(w);
+  }
 
-  j.draw("pdf", "janet_tree.pdf");
+  j.draw("pdf", "janet_tree0.pdf");
+  int i=0;
+  do {
+    int k=prolong(j.begin(), j, q, allocator);
+    std::cerr << k << std::endl;
+    if (k == 0)
+      break;
+    else {
+      std::stringstream ss;
+      ss << "janet_tree" << ++i << ".pdf";
+      j.draw("pdf", ss.str().c_str());
+    }
+  } while(true);
+  
+  for(List<Wrap*>::ConstIterator i(q.begin()); i; ++i)
+    allocator->destroy(i.data());
+  for(int k=0; k < l; k++)
+    allocator->destroy(m[k]);
+  for(int i=0; i < n; i++)
+    allocator->destroy(var[n]);
+
   return EXIT_SUCCESS;
 }
