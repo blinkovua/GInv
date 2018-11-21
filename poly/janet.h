@@ -39,51 +39,65 @@ class Wrap {
   Monom       mLm;
   Monom       mAnsector;
   bool*       mNM;
+  bool*       mNMd;
   bool*       mBuild;
 
 public:
   Wrap()=delete;
   Wrap(const Wrap& a)=delete;
-  Wrap(const Monom& m, Allocator* allocator):
+  Wrap(Allocator* allocator, const Monom& m):
       mAllocator(allocator),
-      mLm(m, allocator),
-      mAnsector(m, allocator),
+      mLm(allocator, m),
+      mAnsector(allocator, m),
       mNM(new(allocator) bool[m.size()]),
+      mNMd(new(allocator) bool[m.size()]),
       mBuild(new(allocator) bool[m.size()]) {
     for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
+      mNMd[i] = false;
       mBuild[i] = false;
     }
   }
-  Wrap(const Wrap* ansector, Monom::Variable var, Allocator* allocator):
+  Wrap(Allocator* allocator, Monom::Variable var, const Wrap* ansector):
       mAllocator(allocator),
-      mLm(ansector->mAnsector, var, allocator),
-      mAnsector(ansector->mAnsector, allocator),
+      mLm(allocator, var, ansector->mLm),
+      mAnsector(allocator, ansector->mAnsector),
       mNM(new(allocator) bool[ansector->mLm.size()]),
+      mNMd(new(allocator) bool[ansector->mLm.size()]),
       mBuild(new(allocator) bool[ansector->mLm.size()]) {
     assert(ansector->mNM[var] && !ansector->mBuild[var]);
     ansector->mBuild[var] = true;
     for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
+      mNMd[i] = false;
       mBuild[i] = false;
     }
   }
   ~Wrap() {
     mAllocator->dealloc(mNM, mLm.size());
+    mAllocator->dealloc(mNMd, mLm.size());
     mAllocator->dealloc(mBuild, mLm.size());
   }
 
   const Monom& lm() const { return mLm; }
   const Monom& ansector() const { return mAnsector; }
   bool isGB() const { return mAnsector.degree() == mLm.degree(); }
-  
+
   void setNM(int var) const {
     assert(0 <= var && var < mLm.size());
     mNM[var] = true;
   }
+  void setNMd(int var) const {
+    assert(0 <= var && var < mLm.size());
+    mNMd[var] = true;
+  }
   bool NM(int var) const {
     assert(0 <= var && var < mLm.size());
     return mNM[var];
+  }
+  bool NMd(int var) const {
+    assert(0 <= var && var < mLm.size());
+    return mNMd[var];
   }
 
   bool build(int var) const {
@@ -186,7 +200,7 @@ public:
   }
 
   Janet::ConstIterator begin() const { return mRoot; }
-  
+
   Wrap* find(const Monom &m) const;
 //   void insert(Wrap *wrap);
   void insert(Wrap *wrap);

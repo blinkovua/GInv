@@ -4,6 +4,7 @@ ADD_EXECUTABLE(unittest
   unittest.cpp
   integer.cpp
   monom.cpp
+  janet.cpp
 )
 
 TARGET_LINK_LIBRARIES(unittest

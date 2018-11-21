@@ -56,13 +56,14 @@ class Allocator {
   size_t mNodeSize=0;
 #endif // GINV_UTIL_ALLOCATOR
 
+  friend class AllocatorPtr;
+  static void timerCont() { sTimer.cont(); }
+  static void timerStop() { sTimer.stop(); }
+
 public:
   static size_t maxMemory() { return sMaxMemory; }
   static size_t currMemory() { return sCurrMemory; }
-
   static const Timer& timer() { return sTimer; }
-  static void timerCont() { sTimer.cont(); }
-  static void timerStop() { sTimer.stop(); }
 
   Allocator() {}
   Allocator(const Allocator& a);

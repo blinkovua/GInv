@@ -62,7 +62,7 @@ void TestRandPermutation::test1() {
     CPPUNIT_ASSERT(p[i] == i);
 
   for(int k=0; k < mK; k++) {
-    p(gen);
+    p.next(gen);
     for(int i=1; i < mN; i++) {
       CPPUNIT_ASSERT(0 <= p[i] < mN);
       for(int j=i+1; j < mN; j++)
@@ -80,7 +80,7 @@ void TestRandPermutation::test2() {
     CPPUNIT_ASSERT(p[i] == i);
 
   for(int k=0; k < mK; k++) {
-    p(gen);
+    p.next(gen);
     for(int i=1; i < mN; i++) {
       CPPUNIT_ASSERT(0 <= p[i] < mN);
       for(int j=i+1; j < mN; j++)
@@ -97,7 +97,7 @@ void TestRandPermutation::test3() {
   for(int i=1; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
-  p(gen);
+  p.next(gen);
   for(int i=1; i < mN; i++) {
     CPPUNIT_ASSERT(0 <= p[i] < mN);
     for(int j=i+1; j < mN; j++)

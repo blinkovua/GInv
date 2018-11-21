@@ -1,6 +1,0 @@
-*~
-*.swp
-*.kate-swp
-config.h
-build/
-CMakeLists.txt.user

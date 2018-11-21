@@ -41,67 +41,73 @@ int prolong(Janet::ConstIterator i, Janet &j, List<Wrap*> &q, Allocator* allocat
   else {
     for(int k=0; k < i.wrap()->lm().size(); k++)
       if (i.wrap()->NM(k) && !i.wrap()->build(k)) {
-        Wrap *w = new(allocator) Wrap(i.wrap(), k, allocator);
-        if (!j.find(w->lm()))
+        Wrap *w = new(allocator) Wrap(allocator, k, i.wrap());
+        if (!j.find(w->lm())) {
+          ++r;
           j.insert(w);
+          std::cerr << "* ";
+        }
+        std::cerr << k << ' ' << w->lm() << std::endl;
         q.push(w);
-        ++r;
       }
   }
   return r;
 }
 
 int main(int argc, char *argv[]) {
-  const int n(6),  // число переменных
-            d(5),  // максимальная степень переменной
-            l(12); // число мономов
-  std::random_device rd;          
-//   std::default_random_engine gen(rd());
-  std::default_random_engine gen;
-  std::uniform_int_distribution<int> dis(0, d);
-  
+  const int n(6),   // число переменных
+            d1(2),  // минимальная степень переменной
+            d2(7),  // максимальная степень переменной
+            l(12);  // число мономов
+
   Allocator allocator[1];
-  Monom *var[n];
-  for(int i=0; i < n; i++)
-    var[i] = new(allocator) Monom(i, n,-1, allocator);
-
-  Monom *m[l];
-  for(int k=0; k < l; k++) {
-    m[k] = new(allocator) Monom(n,-1, allocator);
-    for(int i=0; i < n; i++) 
-      *m[k] *= var[i]->pow(dis(gen));
-    std::cerr << *m[k] << std::endl;
-  }
-
-  List<Wrap*> q(allocator);
-  Janet j(allocator);
-  for(int k=0; k < l; k++) {
-    Wrap *w = new(allocator) Wrap(*m[k], allocator);
-    if (!j.find(*m[k]))
-      j.insert(w);
-    q.push(w);
-  }
-
-  j.draw("pdf", "janet_tree0.pdf");
-  int i=0;
-  do {
-    int k=prolong(j.begin(), j, q, allocator);
-    std::cerr << k << std::endl;
-    if (k == 0)
-      break;
-    else {
-      std::stringstream ss;
-      ss << "janet_tree" << ++i << ".pdf";
-      j.draw("pdf", ss.str().c_str());
+  List<Wrap*> Q(allocator);
+  Monom::rand_init(n, d1, d2);
+  for(int i=0; i < l; i++) {
+    Monom m(Monom::next(allocator));
+    List<Wrap*>::Iterator j(Q.begin());
+    while(j) {
+      if (j.data()->lm().divisiable(m)) {
+        allocator->destroy(j.data());
+        j.del();
+      }
+      else if (m.divisiable(j.data()->lm()))
+        break;
+      else
+        ++j;
     }
-  } while(true);
-  
-  for(List<Wrap*>::ConstIterator i(q.begin()); i; ++i)
-    allocator->destroy(i.data());
-  for(int k=0; k < l; k++)
-    allocator->destroy(m[k]);
-  for(int i=0; i < n; i++)
-    allocator->destroy(var[n]);
+    if (!j) {
+      Q.push(new(allocator) Wrap(allocator, m));
+      std::cerr << m << std::endl;
+    }
+  }
+  std::cerr << Q.length() << std::endl;
+
+  Janet janet(allocator);
+  List<Wrap*> T(allocator);
+  while(Q) {
+    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
+      if (janet.find(j.data()->lm()))
+        allocator->destroy(j.data());
+      else {
+        janet.insert(j.data());
+        T.push(j.data());
+      }
+    }
+    List<Wrap*> tmp(allocator);
+    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+      for(int k=0; k < j.data()->lm().size(); k++)
+        if (j.data()->NM(k) && !j.data()->build(k)) {
+          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          tmp.push(w);
+        }
+    tmp.swap(Q);
+  }
+  janet.draw("pdf", "janet_tree0.pdf");
+
+  std::cerr << "Janet = " << T.length() << std::endl;
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+    allocator->destroy(j.data());
 
   return EXIT_SUCCESS;
 }

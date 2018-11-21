@@ -22,16 +22,50 @@
 
 namespace GInv {
 
-Monom::Monom(int size, Allocator* allocator):
-    mAllocator(allocator),
-    mSize(size),
-    mPos(-1),
-    mDegree(0),
-    mVariables(new(mAllocator) Variable[mSize]) {
-  assert(mSize > 0);
+void Monom::mult(const Monom& a) {
+  assert(mSize == a.mSize);
+  assert(mPos == -1 || a.mPos == -1);
+  mDegree +=a.mDegree;
+  Variable *i=mVariables;
+  const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
+  do {
+    *i++ += *ia++;
+  } while(i < iend);
+  assert(assertValid());
 }
 
-Monom::Monom(int size, int pos, Allocator* allocator):
+int Monom::sSize=0;
+std::uniform_int_distribution<int>* Monom::sDis1=nullptr;
+std::uniform_int_distribution<Monom::Variable>* Monom::sDis2=nullptr;
+
+void Monom::rand_init(int size, int deg1, int deg2) {
+  assert(size > 0);
+  assert(0 < deg1 && deg1 <= deg2);
+  delete sDis1;
+  delete sDis2;
+  sDis1 = new std::uniform_int_distribution<int>(deg1, deg2);
+  sSize = size;
+  sDis2 = new std::uniform_int_distribution<Variable>(0, sSize-1);
+}
+
+Monom Monom::next(Allocator* allocator) {
+  assert(sDis1 && sDis2 && sSize);
+  static std::random_device rd;
+  static std::mt19937 gen(rd());
+  Monom r(allocator, sSize, -1);
+  int deg=(*sDis1)(gen);
+  r.mDegree = deg;
+  do {
+    int var=(*sDis2)(gen);
+    assert(0 <= var && var < sSize);
+    ++r.mVariables[var];
+    --deg;
+  } while(deg);
+  return std::move(r);
+}
+
+Monom::Monom(Allocator* allocator, int size, int pos):
     mAllocator(allocator),
     mSize(size),
     mPos(pos),
@@ -46,7 +80,7 @@ Monom::Monom(int size, int pos, Allocator* allocator):
   } while(i < iend);
 }
 
-Monom::Monom(Variable v, int size, int pos, Allocator* allocator):
+Monom::Monom(Allocator* allocator, Variable v, int size, int pos):
     mAllocator(allocator),
     mSize(size),
     mPos(pos),
@@ -64,22 +98,22 @@ Monom::Monom(Variable v, int size, int pos, Allocator* allocator):
   assert(assertValid());
 }
 
-Monom::Monom(const Monom& a, Allocator* allocator):
+Monom::Monom(Allocator* allocator, const Monom& a):
     mAllocator(allocator),
     mSize(a.mSize),
     mPos(a.mPos),
     mDegree(a.mDegree),
     mVariables(new(mAllocator) Variable[a.mSize]) {
   Variable* i=mVariables;
-  const Variable* ia=a.mVariables;
   const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
   do {
     *i++ = *ia++;
   } while(i < iend);
   assert(assertValid());
 }
 
-Monom::Monom(const Monom& a, Variable v, Allocator* allocator):
+Monom::Monom(Allocator* allocator, Variable v, const Monom& a):
     mAllocator(allocator),
     mSize(a.mSize),
     mPos(a.mPos),
@@ -87,8 +121,8 @@ Monom::Monom(const Monom& a, Variable v, Allocator* allocator):
     mVariables(new(mAllocator) Variable[a.mSize]) {
   assert(0 <= v && v < mSize);
   Variable* i=mVariables;
-  const Variable* ia=a.mVariables;
   const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
   do {
     *i++ = *ia++;
   } while(i < iend);
@@ -96,20 +130,48 @@ Monom::Monom(const Monom& a, Variable v, Allocator* allocator):
   assert(assertValid());
 }
 
-Monom::Monom(const Monom& a, const Monom& b, Allocator* allocator):
+Monom::Monom(Allocator* allocator, const Monom& a, const Monom& b, bool div):
     mAllocator(allocator),
     mSize(a.mSize),
     mPos(a.mPos),
-    mDegree(a.mDegree+b.mDegree),
+    mDegree((div)? a.mDegree-b.mDegree: a.mDegree+b.mDegree),
     mVariables(new(mAllocator) Variable[a.mSize]) {
   assert(a.mSize == b.mSize);
-  assert(b.mPos == -1);
   Variable* i=mVariables;
+  const Variable* const iend=mVariables+mSize;
   const Variable *ia=a.mVariables,
                  *ib=b.mVariables;
+  if (div) {
+    assert(a.divisiable(b));
+    assert(b.mPos == -1);
+    do {
+      *i++ = *ia++ - *ib++;
+    } while(i < iend);
+  }
+  else {
+    if (b.mPos >= 0) {
+      assert(a.mPos == -1);
+      mPos = b.mPos;
+    }
+    do {
+      *i++ = *ia++ + *ib++;
+    } while(i < iend);
+  }
+  assert(assertValid());
+}
+
+Monom::Monom(Allocator* allocator, const Monom& a, int n):    
+    mAllocator(allocator),
+    mSize(a.mSize),
+    mPos(a.mPos),
+    mDegree(a.mDegree*n),
+    mVariables(new(mAllocator) Variable[a.mSize]) {
+  assert(n >= 0);
+  Variable *i=mVariables;
   const Variable* const iend=mVariables+mSize;
+  const Variable *ia=a.mVariables;
   do {
-    *i++ = *ia++ + *ib++;
+    *i++ = (*ia++)*n;
   } while(i < iend);
   assert(assertValid());
 }
@@ -144,91 +206,24 @@ void Monom::operator=(const Monom &a) {
   mPos = a.mPos;
   mDegree = a.mDegree;
   Variable* i=mVariables;
-  const Variable* ia=a.mVariables;
   const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
   do {
     *i++ = *ia++;
   } while(i < iend);
 }
 
-void Monom::operator*=(const Monom& a) {
+bool Monom::divisiable(const Monom& a) const {
   assert(mSize == a.mSize);
-  assert(mPos == -1 || a.mPos == -1);
-  mDegree +=a.mDegree;
-  Monom::Variable *i=mVariables;
-  const Monom::Variable* ia=a.mVariables;
-  const Monom::Variable* const iend=mVariables+mSize;
-  do {
-    *i++ += *ia++;
-  } while(i < iend);
-  assert(assertValid());
-}
-
-Monom Monom::operator*(const Monom& a) {
-  assert(mSize == a.mSize);
-  assert(mPos == -1 || a.mPos == -1);
-  Monom r(mSize, mAllocator);
-  if (a.mPos == -1)
-    r.mPos = mPos;
-  else
-    r.mPos = a.mPos;
-  r.mDegree = mDegree + a.mDegree;
-  Monom::Variable *ir=r.mVariables;
-  const Monom::Variable *i=mVariables,
-                        *ia=a.mVariables;
-  const Monom::Variable* const irend=r.mVariables+r.mSize;
-  do {
-    *ir++ = *i++ + *ia++;
-  } while(ir < irend);
-  assert(r.assertValid());
-  return r;
-}
-
-Monom Monom::pow(int n) const {
-  assert(n >= 0);
-  Monom r(mSize, mAllocator);
-  r.mPos = mPos;
-  r.mDegree = mDegree*n;
-  Variable *ir=r.mVariables;
-  const Variable *i=mVariables;
-  const Variable* const irend=r.mVariables+r.mSize;
-  do {
-    *ir++ = (*i++)*n;
-  } while(ir < irend);
-  assert(r.assertValid());
-  return r;
-}
-
-
-bool Monom::operator|(const Monom& a) const {
-  assert(mSize == a.mSize);
-  bool r=mPos == -1 || mPos == a.mPos;
+  bool r=a.mPos == -1 || mPos == a.mPos;
   if (r) {
-    const Monom::Variable *i=mVariables,
-                          *ia=a.mVariables;
-    const Monom::Variable* const iend=mVariables+mSize;
+    const Variable *i=mVariables,
+                   *ia=a.mVariables;
+    const Variable* const iend=mVariables+mSize;
     do {
-      r = *i++ <= *ia++;
+      r = *i++ >= *ia++;
     } while(r && i < iend);
   }
-  return r;
-}
-
-
-Monom Monom::operator/(const Monom& a) {
-  assert(a | *this);
-  Monom r(mSize, mAllocator);
-  if (a.mPos == -1)
-    r.mPos = mPos;
-  r.mDegree = mDegree - a.mDegree;
-  Monom::Variable *ir=r.mVariables;
-  const Monom::Variable *i=mVariables,
-                        *ia=a.mVariables;
-  const Monom::Variable* const irend=r.mVariables+r.mSize;
-  do {
-    *ir++ = *i++ - *ia++;
-  } while(ir < irend);
-  assert(r.assertValid());
   return r;
 }
 

@@ -169,9 +169,9 @@ public:
       mHead(a.mHead),
       mLength(a.mHead) {
     a.mHead = nullptr;
-    a.mLength = 0;    
+    a.mLength = 0;
   }
-  List(const List& a, Allocator* allocator):
+  List(Allocator* allocator, const List& a):
       mAllocator(allocator),
       mHead(nullptr),
       mLength(0) {
@@ -204,7 +204,7 @@ public:
   inline void operator=(const List& a) {
     assert(this != &a);
     Iterator(this).clear();
-    
+
     Iterator i(this);
     ConstIterator ia(a.mHead);
     while(ia) {
@@ -215,15 +215,15 @@ public:
   }
   inline void operator=(const List&& a) {
     assert(this != &a);
-    
+
     Iterator(this).clear();
-    
+
     mAllocator = a.mAllocator;
     mHead = a.mHead;
     mLength = a.mLength;
-    
+
     a.mHead = nullptr;
-    a.mLength = 0; 
+    a.mLength = 0;
   }
 
   inline operator bool() const { return mHead != nullptr; }

@@ -21,6 +21,9 @@
 #ifndef GINV_POLY_MONOM_H
 #define GINV_POLY_MONOM_H
 
+#include <utility>
+#include <random>
+
 #include "util/allocator.h"
 #include "config.h"
 
@@ -37,9 +40,16 @@ protected:
   int         mDegree;
   Variable*   mVariables;
 
-  Monom(int size, Allocator* allocator);
+  static int                                             sSize;
+  static std::uniform_int_distribution<int>*             sDis1;
+  static std::uniform_int_distribution<Monom::Variable>* sDis2;
 
+  void mult(const Monom& a);
+  
 public:
+  static void rand_init(int size, int deg1, int deg2);
+  static Monom next(Allocator* allocator);
+
   Monom()=delete;
   Monom(const Monom& a)=delete;
   Monom(Monom&& a):
@@ -50,11 +60,12 @@ public:
       mVariables(a.mVariables) {
     a.mSize = 0;
   }
-  Monom(int size, int pos, Allocator* allocator);
-  Monom(Variable v, int size, int pos, Allocator* allocator);
-  Monom(const Monom& a, Allocator* allocator);
-  Monom(const Monom& a, Variable v, Allocator* allocator);
-  Monom(const Monom& a, const Monom& b, Allocator* allocator);
+  Monom(Allocator* allocator, int size, int pos);
+  Monom(Allocator* allocator, Variable v, int size, int pos);
+  Monom(Allocator* allocator, const Monom& a);
+  Monom(Allocator* allocator, Variable v, const Monom& a);
+  Monom(Allocator* allocator, const Monom& a, const Monom& b, bool div=false);
+  Monom(Allocator* allocator, const Monom& a, int n);
   ~Monom() {
     if (mSize)
       mAllocator->dealloc(mVariables, mSize);
@@ -81,25 +92,28 @@ public:
   int size() const { return mSize; }
   int pos() const { return mPos; }
   int degree() const { return mDegree; }
+
   Variable operator[](int i) const {
     assert(0 <= i && i < mSize);
     return mVariables[i];
   }
 
   void setPos(int pos) {
-    assert(pos >= -1);
+    assert(mPos == -1);
     mPos = pos;
   }
 
-  void operator*=(const Monom& a);
-  Monom operator*(const Monom& a);
-  Monom pow(int n) const;
-  bool operator|(const Monom& a) const;
-  Monom operator/(const Monom& a);
+  bool divisiable(const Monom& a) const;
 
   int lex(const Monom& a) const;
   int deglex(const Monom& a) const;
   int alex(const Monom& a) const;
+
+  friend inline Monom operator*(Monom&& a, const Monom& b) {
+    Monom r(std::move(a));
+    r.mult(b);
+    return std::move(r);
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const Monom &a);
 

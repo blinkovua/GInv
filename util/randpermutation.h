@@ -47,7 +47,7 @@ public:
   }
 
   //  Durstenfeld's version the algorithm Fisher–Yates shuffle
-  template<class Generator> void operator()(Generator& g) {
+  template<class Generator> void next(Generator& g) {
     for(int i=mSize-1; i > 0; i--) {
       auto j=(*mDis[i-1])(g);
       auto swap=mPerm[j];
@@ -57,6 +57,18 @@ public:
   }
 
   friend std::ostream& operator<<(std::ostream& out, const RandPermutation &a);
+};
+
+class RandPermutation_mt19937: public RandPermutation {
+  std::mt19937       mGen;
+
+public:
+  explicit RandPermutation_mt19937(int n):
+      RandPermutation(n),
+      mGen(std::random_device()()) {
+  }
+
+  void next() { RandPermutation::next(mGen); }
 };
 
 }
