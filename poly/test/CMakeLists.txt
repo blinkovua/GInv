@@ -5,6 +5,7 @@ ADD_EXECUTABLE(unittest
   integer.cpp
   monom.cpp
   janet.cpp
+  gb.cpp
 )
 
 TARGET_LINK_LIBRARIES(unittest
@@ -23,3 +24,12 @@ IF(BUILD_GRAPHVIZ)
     ginvutil
   )
 ENDIF(BUILD_GRAPHVIZ)
+
+ADD_EXECUTABLE(stattest
+  stattest.cpp
+)
+
+TARGET_LINK_LIBRARIES(stattest
+  ginvpoly
+  ginvutil
+)

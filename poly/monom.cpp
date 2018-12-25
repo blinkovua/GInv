@@ -59,7 +59,7 @@ Monom Monom::next(Allocator* allocator) {
   do {
     int var=(*sDis2)(gen);
     assert(0 <= var && var < sSize);
-    ++r.mVariables[var];
+    r.mVariables[var]++;
     --deg;
   } while(deg);
   return std::move(r);
@@ -94,7 +94,7 @@ Monom::Monom(Allocator* allocator, Variable v, int size, int pos):
   do {
     *i++ = 0;
   } while(i < iend);
-  ++mVariables[v];
+  mVariables[v]++;
   assert(assertValid());
 }
 
@@ -126,7 +126,7 @@ Monom::Monom(Allocator* allocator, Variable v, const Monom& a):
   do {
     *i++ = *ia++;
   } while(i < iend);
-  ++mVariables[v];
+  ++(mVariables[v]);
   assert(assertValid());
 }
 

@@ -65,7 +65,7 @@ public:
       mNM(new(allocator) bool[ansector->mLm.size()]),
       mNMd(new(allocator) bool[ansector->mLm.size()]),
       mBuild(new(allocator) bool[ansector->mLm.size()]) {
-    assert(ansector->mNM[var] && !ansector->mBuild[var]);
+    assert((ansector->mNM[var] || ansector->mNMd[var]) && !ansector->mBuild[var]);
     ansector->mBuild[var] = true;
     for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
@@ -112,6 +112,7 @@ public:
 
 
 class Janet {
+protected:
   friend class ConstIterator;
   friend class Iterator;
 
@@ -148,7 +149,7 @@ public:
     bool assertValid();
   };
 
-private:
+protected:
   class Iterator {
     Link *i;
 
@@ -178,16 +179,21 @@ private:
   };
 
   Allocator*  mAllocator;
+  int         mSize;
   int         mPos;
   Link        mRoot;
 
 #ifdef GINV_POLY_GRAPHVIZ
-  static Agnode_t* draw(Agraph_t *g, Link j, Monom::Variable var);
+  static Agnode_t* draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd);
 #endif // GINV_POLY_GRAPHVIZ
+
+  static void setMNprec(Wrap *wrap, int v, ConstIterator j);
+  static void setMNsucc(Wrap *wrap, int v,  ConstIterator j);
 
 public:
   explicit Janet(Allocator* allocator):
       mAllocator(allocator),
+      mSize(0),
       mPos(0),
       mRoot(nullptr) {
   }
@@ -200,19 +206,32 @@ public:
   }
 
   Janet::ConstIterator begin() const { return mRoot; }
+  int size() const { return mSize;}
 
   Wrap* find(const Monom &m) const;
-//   void insert(Wrap *wrap);
   void insert(Wrap *wrap);
-  void setNM(Wrap *wrap);
-//   void update(Wrap *wrap);
+  void setMNprec(Wrap *wrap) {
+    if (mRoot)
+      setMNprec(wrap, 0, ConstIterator(mRoot));
+  }
+  void setMNsucc(Wrap *wrap) {
+    if (mRoot)
+      setMNsucc(wrap, 0, ConstIterator(mRoot));
+  }
 
 #ifdef GINV_POLY_GRAPHVIZ
+  void draw(Agraph_t *g, bool NMd) {
+    draw(g, mRoot, 0, NMd);
+  }
+
   void draw(const char* format, const char* filename) const {
     GVC_t *gvc=gvContext();
     Agraph_t *g=agopen((char*)"Janet",  Agdirected, (Agdisc_t*)nullptr);
+    std::stringstream ss;
+    ss << "#Janet = " << size();
+    agnode(g, (char*)ss.str().c_str(), 1);
     if (mRoot)
-      draw(g, mRoot, 0);
+      draw(g, mRoot, 0, false);
     gvLayout(gvc, g, (char*)"dot");
     gvRenderFilename(gvc, g, format, filename);
     gvFreeLayout(gvc, g);

@@ -96,6 +96,8 @@ ADD_LIBRARY(ginvpoly STATIC
   monom.h
   janet.cpp
   janet.h
+  gb.cpp
+  gb.h
 )
 
 TARGET_LINK_LIBRARIES(ginvpoly
