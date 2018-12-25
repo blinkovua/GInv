@@ -113,6 +113,18 @@ Monom::Monom(Allocator* allocator, const Monom& a):
   assert(assertValid());
 }
 
+Monom::Monom(Allocator* allocator, const Monom& a, RandPermutation &p):
+    mAllocator(allocator),
+    mSize(a.mSize),
+    mPos(a.mPos),
+    mDegree(a.mDegree),
+    mVariables(new(mAllocator) Variable[a.mSize]) {
+  assert(mSize == p.size());
+  for(int v=0; v < mSize; v++)
+    mVariables[v] = a.mVariables[p[v]];
+  assert(assertValid());
+}
+  
 Monom::Monom(Allocator* allocator, Variable v, const Monom& a):
     mAllocator(allocator),
     mSize(a.mSize),

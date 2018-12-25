@@ -58,12 +58,12 @@ void TestRandPermutation::test1() {
   std::default_random_engine gen(rd());
 
   RandPermutation p(mN);
-  for(int i=1; i < mN; i++)
+  for(int i=0; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
   for(int k=0; k < mK; k++) {
     p.next(gen);
-    for(int i=1; i < mN; i++) {
+    for(int i=0; i < mN; i++) {
       CPPUNIT_ASSERT(0 <= p[i] < mN);
       for(int j=i+1; j < mN; j++)
         CPPUNIT_ASSERT(p[i] != p[j]);
@@ -76,12 +76,12 @@ void TestRandPermutation::test2() {
   std::mt19937 gen(rd());
 
   RandPermutation p(mN);
-  for(int i=1; i < mN; i++)
+  for(int i=0; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
   for(int k=0; k < mK; k++) {
     p.next(gen);
-    for(int i=1; i < mN; i++) {
+    for(int i=0; i < mN; i++) {
       CPPUNIT_ASSERT(0 <= p[i] < mN);
       for(int j=i+1; j < mN; j++)
         CPPUNIT_ASSERT(p[i] != p[j]);
@@ -94,11 +94,11 @@ void TestRandPermutation::test3() {
   std::default_random_engine gen(rd());
 
   RandPermutation p(100000);
-  for(int i=1; i < mN; i++)
+  for(int i=0; i < mN; i++)
     CPPUNIT_ASSERT(p[i] == i);
 
   p.next(gen);
-  for(int i=1; i < mN; i++) {
+  for(int i=0; i < mN; i++) {
     CPPUNIT_ASSERT(0 <= p[i] < mN);
     for(int j=i+1; j < mN; j++)
       CPPUNIT_ASSERT(p[i] != p[j]);

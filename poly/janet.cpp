@@ -59,6 +59,7 @@ void Janet::Iterator::clear(Allocator* allocator) {
 }
 
 void Janet::ConstIterator::setNM(Monom::Variable var) {
+  assert(i);
   while(nextDeg()) {
     if (nextVar())
       nextVar().setNM(var);
@@ -254,6 +255,7 @@ void Janet::insert(Wrap *wrap) {
   else {
     int var = 0;
     do {
+      assert(j);
       while(j.degree() < wrap->lm()[var] && j.nextDeg())
         j.deg();
 
@@ -274,10 +276,15 @@ void Janet::insert(Wrap *wrap) {
           d -= wrap->lm()[var];
           ++var;
           j.var();
+          if (!j) {
+            j.build(d, var, wrap, mAllocator);
+            break;
+          }
         }
       }
       else {
-        Janet::ConstIterator(j).nextVar().setNM(var);
+        if (j.nextVar())
+          Janet::ConstIterator(j).nextVar().setNM(var);
         j.deg();
         j.build(d, var, wrap, mAllocator);
         break;

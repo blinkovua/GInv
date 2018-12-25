@@ -18,7 +18,7 @@ INCLUDE(CPack)
 # SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 #Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.
-SET(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_BUILD_TYPE Release)
 
 # MSVC does not require any special flags
 IF(UNIX)

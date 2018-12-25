@@ -25,6 +25,7 @@
 #include <random>
 
 #include "util/allocator.h"
+#include "util/randpermutation.h"
 #include "config.h"
 
 namespace GInv {
@@ -63,6 +64,7 @@ public:
   Monom(Allocator* allocator, int size, int pos);
   Monom(Allocator* allocator, Variable v, int size, int pos);
   Monom(Allocator* allocator, const Monom& a);
+  Monom(Allocator* allocator, const Monom& a, RandPermutation &p);
   Monom(Allocator* allocator, Variable v, const Monom& a);
   Monom(Allocator* allocator, const Monom& a, const Monom& b, bool div=false);
   Monom(Allocator* allocator, const Monom& a, int n);

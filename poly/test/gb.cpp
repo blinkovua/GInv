@@ -30,8 +30,6 @@ class GBPoly: public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST(test1);
   CPPUNIT_TEST(test2);
   CPPUNIT_TEST(test3);
-//   CPPUNIT_TEST(test4);
-//   CPPUNIT_TEST(test5);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -41,8 +39,6 @@ public:
   void test1();
   void test2();
   void test3();
-  void test4();
-  void test5();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(GBPoly);
@@ -53,6 +49,31 @@ void GBPoly::setUp() {
 void GBPoly::tearDown() {
 }
 
+
+void testAlex(List<Wrap*> &T) {
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
+    List<Wrap*>::ConstIterator k(j);
+    for(++k; k; ++k) {
+      if (j.data()->ansector().alex(k.data()->ansector()) != 0) {
+        Wrap *w1, *w2;
+        if (j.data()->ansector().alex(k.data()->ansector()) > 0) {
+          w1 = j.data();
+          w2 = k.data();
+        }
+        else {
+          w2 = j.data();
+          w1 = k.data();
+        }
+        for(int v=0; v < w1->lm().size(); v++) {
+          if (w1->lm()[v] > w2->lm()[v]) {
+            CPPUNIT_ASSERT(w2->NM(v) || w2->NMd(v));
+            break;
+          }
+        }
+      }
+    }
+  }
+}
 
 void GBPoly::test1() {
   const int n(5);
@@ -78,12 +99,12 @@ void GBPoly::test1() {
   int deg=0;
   while(Q) {
     for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (gb.find(j.data()->lm()))
-        std::cerr << j.data()->lm() << " find " << gb.find(j.data()->lm())->lm() << std::endl;
+//       if (gb.find(j.data()->lm()))
+//         std::cerr << j.data()->lm() << " find " << gb.find(j.data()->lm())->lm() << std::endl;
       if (gb.find(j.data()->lm()))
         allocator->destroy(j.data());
       else {
-        std::cerr << j.data()->lm() << " insert " << std::endl;
+//         std::cerr << j.data()->lm() << " insert " << std::endl;
         gb.insert(j.data());
         T.push(j.data());
       }
@@ -118,11 +139,12 @@ void GBPoly::test1() {
       CPPUNIT_ASSERT(gb.find(m));
     }
 
-// //   std::cerr << "Janet = " << gb.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2])->lm() << std::endl;
+  testAlex(T);  
+// //   std::cerr << "GB = " << gb.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2])->lm() << std::endl;
 //   CPPUNIT_ASSERT(gb.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2]));
 //   CPPUNIT_ASSERT(T.length() == gb.size());
 //
-// //   std::cerr << "Janet = " << T.length() << std::endl;
+// //   std::cerr << "GB = " << T.length() << std::endl;
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     allocator->destroy(j.data());
 }
@@ -154,12 +176,12 @@ void GBPoly::test2() {
   int deg=0;
   while(Q) {
     for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (gb.find(j.data()->lm()))
-        std::cerr << j.data()->lm() << " find " << gb.find(j.data()->lm())->lm() << std::endl;
+//       if (gb.find(j.data()->lm()))
+//         std::cerr << j.data()->lm() << " find " << gb.find(j.data()->lm())->lm() << std::endl;
       if (gb.find(j.data()->lm()))
         allocator->destroy(j.data());
       else {
-        std::cerr << j.data()->lm() << " insert " << std::endl;
+//         std::cerr << j.data()->lm() << " insert " << std::endl;
         gb.insert(j.data());
         T.push(j.data());
       }
@@ -201,17 +223,30 @@ void GBPoly::test2() {
       CPPUNIT_ASSERT(gb.find(j.data()->lm()));
     }
   }
-//
+
+  testAlex(T);  
 //   CPPUNIT_ASSERT(T.length() == gb.size());
-// //   std::cerr << "Janet = " << T.length() << std::endl;
+// //   std::cerr << "GB = " << T.length() << std::endl;
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     allocator->destroy(j.data());
+}
+
+void addQ(List<Wrap*> &Q, List<Wrap*> &Qtmp, int d1, int d2) {
+  while(!Q && Qtmp)
+    for(int d=d1; d <= d2 && !Q; d++)
+      for(List<Wrap*>::Iterator j(Qtmp.begin()); j;)
+        if (j.data()->lm().degree() != d)
+          ++j;
+        else {
+          Q.push(j.data());
+          j.del();
+        }
 }
 
 void GBPoly::test3() {
   Allocator allocator[1];
   const int n=30;
-  const int s=5, d1=2, d2=7;
+  const int s=6, d1=2, d2=7;
   Monom::rand_init(s, d1, d2);
   List<Wrap*> Qtmp(allocator);
   for(int i=0; i < n; i++)
@@ -222,16 +257,7 @@ void GBPoly::test3() {
   std::cerr << "AAA " << Qtmp.length() << std::endl;
 
   List<Wrap*> Q(allocator);
-  while(!Q && Qtmp)
-    for(int d=d1; d <= d2 && !Q; d++)
-      for(List<Wrap*>::Iterator j(Qtmp.begin()); j;)
-        if (j.data()->lm().degree() != d)
-          ++j;
-        else {
-          Q.push(j.data());
-          j.del();
-        }
-  std::cerr << "AAA " << Q.length() << std::endl;
+  addQ(Q, Qtmp, d1, d2);
 
   GB gb(allocator);
   List<Wrap*> T(allocator);
@@ -253,33 +279,26 @@ void GBPoly::test3() {
           tmp.push(w);
         }
     tmp.swap(Q);
-    while(!Q && Qtmp)
-      for(int d=d1; d <= d2 && !Q; d++)
-        for(List<Wrap*>::Iterator j(Qtmp.begin()); j;)
-          if (j.data()->lm().degree() != d)
-            ++j;
-          else {
-            Q.push(j.data());
-            j.del();
-          }
-    std::cerr << "AAA " << Qtmp.length() << std::endl;
+
+    addQ(Q, Qtmp, d1, d2);
   }
 #ifdef GINV_POLY_GRAPHVIZ
   gb.draw("pdf", "gb_test3.pdf");
 #endif // GINV_POLY_GRAPHVIZ
 
 
-//   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
-//     Allocator allocator[1];
-//     for(int v=0; v < s; v++) {
-//       Monom m(allocator, v, j.data()->lm());
-//       CPPUNIT_ASSERT(gb.find(j.data()->lm()));
-//     }
-//   }
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
+    Allocator allocator[1];
+    for(int v=0; v < s; v++) {
+      Monom m(allocator, v, j.data()->lm());
+      CPPUNIT_ASSERT(gb.find(j.data()->lm()));
+    }
+  }
 
+//   testAlex(T);  
 
   CPPUNIT_ASSERT(T.length() == gb.size());
-  std::cerr << "Janet = " << T.length() << std::endl;
+  std::cerr << "GB = " << T.length() << std::endl;
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     allocator->destroy(j.data());
 }
