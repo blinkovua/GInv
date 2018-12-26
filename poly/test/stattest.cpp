@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <random>
+#include <cmath>
 
 #include <graphviz/gvc.h>
 
@@ -44,16 +45,16 @@ void addQ(List<Wrap*> &Q, List<Wrap*> &Qtmp, int d1, int d2) {
 }
 
 int main(int argc, char *argv[]) {
-  const int l=10,  // число экспериментов
-            p=20,  // число перестановок
-            n=30,   // число мономов
-            s=9,    // число переменных
+  const int l=30,  // число экспериментов
+            p=50,  // число перестановок
+            n=50,   // число мономов
+            s=20,    // число переменных
             d1=3,   // минимальная степень переменной
-            d2=16;  // максимальная степень переменной
+            d2=30;  // максимальная степень переменной
 
   RandPermutation_mt19937 per(s);
   Monom::rand_init(s, d1, d2);
-  
+
   int sumJanet=0, sumGB=0;
   Timer timerJanet, timerGB;
   for(int i=0; i < l; i++) {
@@ -61,9 +62,10 @@ int main(int argc, char *argv[]) {
     List<Wrap*> Qbase(allocator);
     for(int i=0; i < n; i++)
       Qbase.push(new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator))));
-    std::cerr << "*****" << std::endl;
+    std::cout << "*****" << std::endl;
 
-    for(int p1=0; p1 < p; p1++) {  
+    int sJanet[p], sGB[p];
+    for(int p1=0; p1 < p; p1++) {
       timerJanet.cont();
       {
         Allocator allocator[1];
@@ -105,13 +107,14 @@ int main(int argc, char *argv[]) {
           }
         }
         assert(T.length() == janet.size());
-        std::cerr << "Janet = " << T.length() << "  ";
+        std::cout << "Janet = " << T.length() << "  ";
         sumJanet += T.length();
+        sJanet[p1] = T.length();
         for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
           allocator->destroy(j.data());
       }
       timerJanet.stop();
-      
+
       timerGB.cont();
       {
         Allocator allocator[1];
@@ -153,25 +156,46 @@ int main(int argc, char *argv[]) {
           }
         }
         assert(T.length() == gb.size());
-        std::cerr << "GB = " << T.length() << std::endl;
+        std::cout << "GB = " << T.length() << std::endl;
         sumGB += T.length();
+        sGB[p1] = T.length();
         for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
           allocator->destroy(j.data());
-        
+
       }
       timerGB.stop();
-    
+
       per.next();
     }
-    
+
+    double meanJanet=0., meanGB=0.;
+    for(int p1=0; p1 < p; p1++) {
+      meanJanet += sJanet[p1];
+      meanGB += sGB[p1];
+    }
+    meanJanet /= p;
+    meanGB /= p;
+
+    double sdJanet=0., sdGB=0.;
+    for(int p1=0; p1 < p; p1++) {
+      sdJanet += (sJanet[p1] - meanJanet)*(sJanet[p1] - meanJanet);
+      sdGB += (sGB[p1] - meanGB)*(sGB[p1] - meanGB);
+    }
+    sdJanet = sqrt(sdJanet/(p-1));
+    sdGB = sqrt(sdGB/(p-1));
+
+    std::cout << std::endl << std::fixed
+      << "sdJanet = " << sdJanet
+      << "  sdGB = " << sdGB << std::endl;
+
     for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
       allocator->destroy(j.data());
   }
 
-  std::cerr << "average Janet = " << std::fixed << float(sumJanet)/l << std::endl;
-  std::cerr << timerJanet << std::endl;
-  std::cerr << "   average GB = " << std::fixed << float(sumGB)/l << std::endl;
-  std::cerr << timerGB << std::endl;
+  std::cout << "average Janet = " << std::fixed << float(sumJanet)/(l*p) << std::endl;
+  std::cout << timerJanet << std::endl;
+  std::cout << "   average GB = " << std::fixed << float(sumGB)/(l*p) << std::endl;
+  std::cout << timerGB << std::endl;
 
   return EXIT_SUCCESS;
 }
