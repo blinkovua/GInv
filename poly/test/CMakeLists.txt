@@ -6,6 +6,7 @@ ADD_EXECUTABLE(unittest
   monom.cpp
   janet.cpp
   gb.cpp
+  mcompletion.cpp
 )
 
 TARGET_LINK_LIBRARIES(unittest

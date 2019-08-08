@@ -4,21 +4,24 @@ from Cython.Build import cythonize
 
 extensions = [
     Extension("*", ["*.pyx"],
-        include_dirs=[
+        include_dirs = [
           "../../util/",
           "../../poly/",
           "../../",
           ],
-        libraries=[
+        libraries = [
           "ginvpoly",
           "ginvutil",
+          "cgraph",
+          "gvc",
           ],
-        library_dirs=[
+        library_dirs = [
           "../poly/",
           "../util/",
         ]
     ),
 ]
+
 setup(
     name="ginv",
     version = "3.0",

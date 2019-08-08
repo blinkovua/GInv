@@ -35,6 +35,9 @@ Allocator::Allocator(const Allocator& a) {
 }
 
 Allocator::~Allocator() {
+  if (mSize != 0)
+    std::cerr << "(mSize != 0) "<< mSize << std::endl;
+
   assert(mSize == 0);
   sCurrMemory -= mAlloc;
   while(mRoot) {
@@ -68,6 +71,7 @@ void Allocator::swap(Allocator& a) {
 
 void* Allocator::allocate(size_t n) {
   assert(n > 0);
+  n = ((n >> 6) + 1) << 6;
   if (mNodeSize + n > mNodeAlloc) {
     mNodeAlloc = ((n + memoryPageSize) / memoryPageSize)*memoryPageSize;
     mAlloc += mNodeAlloc;
@@ -80,11 +84,13 @@ void* Allocator::allocate(size_t n) {
   void *r=(char*)mRoot->mPointer + mNodeSize;
   mSize += n;
   mNodeSize += n;
+  assert(mNodeSize <= mNodeAlloc);
   return r;
 }
 
 void Allocator::deallocate(const void*, size_t n) {
   assert(n > 0);
+  n = ((n >> 6) + 1) << 6;
   assert(mSize >= n);
   mSize -= n;
 }

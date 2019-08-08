@@ -24,6 +24,7 @@
 #include "util/allocator.h"
 #include "util/list.h"
 #include "monom.h"
+#include "wrap.h"
 
 #include "config.h"
 
@@ -33,83 +34,6 @@
 #endif // GINV_POLY_GRAPHVIZ
 
 namespace GInv {
-
-class Wrap {
-  Allocator*  mAllocator;
-  Monom       mLm;
-  Monom       mAnsector;
-  bool*       mNM;
-  bool*       mNMd;
-  bool*       mBuild;
-
-public:
-  Wrap()=delete;
-  Wrap(const Wrap& a)=delete;
-  Wrap(Allocator* allocator, const Monom& m):
-      mAllocator(allocator),
-      mLm(allocator, m),
-      mAnsector(allocator, m),
-      mNM(new(allocator) bool[m.size()]),
-      mNMd(new(allocator) bool[m.size()]),
-      mBuild(new(allocator) bool[m.size()]) {
-    for(int i=0; i < mLm.size(); i++) {
-      mNM[i] = false;
-      mNMd[i] = false;
-      mBuild[i] = false;
-    }
-  }
-  Wrap(Allocator* allocator, Monom::Variable var, const Wrap* ansector):
-      mAllocator(allocator),
-      mLm(allocator, var, ansector->mLm),
-      mAnsector(allocator, ansector->mAnsector),
-      mNM(new(allocator) bool[ansector->mLm.size()]),
-      mNMd(new(allocator) bool[ansector->mLm.size()]),
-      mBuild(new(allocator) bool[ansector->mLm.size()]) {
-    assert((ansector->mNM[var] || ansector->mNMd[var]) && !ansector->mBuild[var]);
-    ansector->mBuild[var] = true;
-    for(int i=0; i < mLm.size(); i++) {
-      mNM[i] = false;
-      mNMd[i] = false;
-      mBuild[i] = false;
-    }
-  }
-  ~Wrap() {
-    mAllocator->dealloc(mNM, mLm.size());
-    mAllocator->dealloc(mNMd, mLm.size());
-    mAllocator->dealloc(mBuild, mLm.size());
-  }
-
-  const Monom& lm() const { return mLm; }
-  const Monom& ansector() const { return mAnsector; }
-  bool isGB() const { return mAnsector.degree() == mLm.degree(); }
-
-  void setNM(int var) const {
-    assert(0 <= var && var < mLm.size());
-    mNM[var] = true;
-  }
-  void setNMd(int var) const {
-    assert(0 <= var && var < mLm.size());
-    mNMd[var] = true;
-  }
-  bool NM(int var) const {
-    assert(0 <= var && var < mLm.size());
-    return mNM[var];
-  }
-  bool NMd(int var) const {
-    assert(0 <= var && var < mLm.size());
-    return mNMd[var];
-  }
-
-  bool build(int var) const {
-    assert(0 <= var && var < mLm.size());
-    return mBuild[var];
-  }
-//   bool setBuild(int var) const {
-//     assert(0 <= var && var < mLm.size());
-//     mBuild[var] = true;
-//   }
-};
-
 
 class Janet {
 protected:
@@ -198,10 +122,12 @@ public:
       mRoot(nullptr) {
   }
   ~Janet() {
+    std::cerr << "D " << mAllocator->size() << std::endl;
     if (mRoot) {
       Janet::Iterator j(mRoot);
       j.clear(mAllocator);
     }
+    std::cerr << "E " << mAllocator->size() << std::endl;
     assert(mRoot == nullptr);
   }
 

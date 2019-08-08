@@ -261,6 +261,8 @@ void Janet::insert(Wrap *wrap) {
 
       if (j.degree() > wrap->lm()[var]) {
         wrap->setNM(var);
+        if (j.nextVar())
+          Janet::ConstIterator(j).nextVar().setNM(var);
         j.build(d, var, wrap, mAllocator);
         break;
       }

@@ -30,6 +30,8 @@ class GBPoly: public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST(test1);
   CPPUNIT_TEST(test2);
   CPPUNIT_TEST(test3);
+  CPPUNIT_TEST(test6);
+  CPPUNIT_TEST(test7);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -39,6 +41,8 @@ public:
   void test1();
   void test2();
   void test3();
+  void test6();
+  void test7();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(GBPoly);
@@ -139,7 +143,7 @@ void GBPoly::test1() {
       CPPUNIT_ASSERT(gb.find(m));
     }
 
-  testAlex(T);  
+  testAlex(T);
 // //   std::cerr << "GB = " << gb.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2])->lm() << std::endl;
 //   CPPUNIT_ASSERT(gb.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2]));
 //   CPPUNIT_ASSERT(T.length() == gb.size());
@@ -224,7 +228,7 @@ void GBPoly::test2() {
     }
   }
 
-  testAlex(T);  
+  testAlex(T);
 //   CPPUNIT_ASSERT(T.length() == gb.size());
 // //   std::cerr << "GB = " << T.length() << std::endl;
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
@@ -295,10 +299,133 @@ void GBPoly::test3() {
     }
   }
 
-//   testAlex(T);  
+//   testAlex(T);
 
   CPPUNIT_ASSERT(T.length() == gb.size());
   std::cerr << "GB = " << T.length() << std::endl;
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+    allocator->destroy(j.data());
+}
+
+void GBPoly::test6() {
+  const int n(3);
+  Allocator allocator[1];
+  Monom v[]={
+    {allocator, 1, n, -1},
+    {allocator, 0, n, -1},
+//     {allocator, 1, n, -1},
+    {allocator, 2, n, -1},
+  };
+  List<Wrap*> Q(allocator);
+
+//   {201,120,400,103,040}
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 2)*v[2]));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[0]));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 4)));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 3)*v[0]));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 4)));
+
+  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
+    std::cerr << j.data()->lm() << std::endl;
+  std::cerr << Q.length() << std::endl;
+
+  GB gb(allocator);
+  List<Wrap*> T(allocator);
+  while(Q) {
+    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
+      if (gb.find(j.data()->lm()))
+        allocator->destroy(j.data());
+      else {
+        gb.insert(j.data());
+        T.push(j.data());
+      }
+    }
+    List<Wrap*> tmp(allocator);
+    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+      for(int k=0; k < j.data()->lm().size(); k++)
+        if (j.data()->NM(k) && !j.data()->build(k)) {
+          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
+          tmp.push(w);
+        }
+    tmp.swap(Q);
+  }
+
+#ifdef GINV_POLY_GRAPHVIZ
+  gb.draw("pdf", "gb_test6.pdf");
+#endif // GINV_POLY_GRAPHVIZ
+
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+    for(int v=0; v < n; v++) {
+      Monom m(allocator, v, j.data()->lm());
+      CPPUNIT_ASSERT(gb.find(m));
+    }
+
+  CPPUNIT_ASSERT(T.length() == gb.size());
+
+//   std::cerr << "GB = " << T.length() << std::endl;
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+    allocator->destroy(j.data());
+}
+
+void GBPoly::test7() {
+  const int n(5);
+  Allocator allocator[1];
+  Monom v[]={
+    {allocator, 0, n, -1},
+    {allocator, 2, n, -1},
+    {allocator, 3, n, -1},
+    {allocator, 1, n, -1},
+    {allocator, 4, n, -1},
+  };
+  List<Wrap*> Q(allocator);
+
+//   {22001, 02105, 01010,00200, 00112}
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 2)*Monom(allocator, v[1], 2)*v[4]));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[2]*v[4]));
+  Q.push(new(allocator) Wrap(allocator,Monom(allocator, v[1])*v[3]));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 2)));
+  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[4], 2)*v[2]*v[3]));
+
+  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
+    std::cerr << j.data()->lm() << std::endl;
+  std::cerr << Q.length() << std::endl;
+
+  GB gb(allocator);
+  List<Wrap*> T(allocator);
+  while(Q) {
+    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
+      if (gb.find(j.data()->lm()))
+        allocator->destroy(j.data());
+      else {
+        gb.insert(j.data());
+        T.push(j.data());
+      }
+    }
+    List<Wrap*> tmp(allocator);
+    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+      for(int k=0; k < j.data()->lm().size(); k++)
+        if (j.data()->NM(k) && !j.data()->build(k)) {
+          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
+          tmp.push(w);
+        }
+    tmp.swap(Q);
+  }
+
+#ifdef GINV_POLY_GRAPHVIZ
+  gb.draw("pdf", "gb_test7.pdf");
+#endif // GINV_POLY_GRAPHVIZ
+
+  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+    for(int v=0; v < n; v++) {
+      Monom m(allocator, v, j.data()->lm());
+      CPPUNIT_ASSERT(gb.find(m));
+    }
+
+  CPPUNIT_ASSERT(T.length() == gb.size());
+
+//   std::cerr << "GB = " << T.length() << std::endl;
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     allocator->destroy(j.data());
 }

@@ -105,7 +105,7 @@ void MonomPoly::test3() {
   const int s=5, d1=2, d2=7;
   Monom::rand_init(s, d1, d2);
   for(int i=0; i < n; i++) {
-    Monom m(Monom::next(allocator));  
+    Monom m(Monom::next(allocator));
     CPPUNIT_ASSERT(d1 <= m.degree() && m.degree() <= d2);
 //     std::cerr << m << std::endl;
   }

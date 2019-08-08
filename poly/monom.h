@@ -44,9 +44,9 @@ protected:
   static int                                             sSize;
   static std::uniform_int_distribution<int>*             sDis1;
   static std::uniform_int_distribution<Monom::Variable>* sDis2;
-
-  void mult(const Monom& a);
   
+  void mult1(const Monom& a);
+
 public:
   static void rand_init(int size, int deg1, int deg2);
   static Monom next(Allocator* allocator);
@@ -66,7 +66,8 @@ public:
   Monom(Allocator* allocator, const Monom& a);
   Monom(Allocator* allocator, const Monom& a, RandPermutation &p);
   Monom(Allocator* allocator, Variable v, const Monom& a);
-  Monom(Allocator* allocator, const Monom& a, const Monom& b, bool div=false);
+  Monom(Allocator* allocator, const Monom& a, const Monom& b);
+  Monom(Allocator* allocator, const Monom& a, const Monom& b, bool);
   Monom(Allocator* allocator, const Monom& a, int n);
   ~Monom() {
     if (mSize)
@@ -113,7 +114,7 @@ public:
 
   friend inline Monom operator*(Monom&& a, const Monom& b) {
     Monom r(std::move(a));
-    r.mult(b);
+    r.mult1(b);
     return std::move(r);
   }
 
@@ -121,6 +122,7 @@ public:
 
   bool assertValid() const;
 };
+
 
 }
 

@@ -1,3 +1,5 @@
+from pprint import pprint, pformat
+
 from unittest import TestCase
 #from nose.tools import assert_equal
 
@@ -34,41 +36,89 @@ fac = 1
 for i in range(1, 10000):
   fac *= i
 t.stop()
-print("userTime: %.2f, sysTime: %.2f, realTime: %.2f" % (
-    t.userTime(),
-    t.sysTime(),
-    t.realTime()
-  )
-)
+print(t)
 
-print(allocate())
+a = allocator()
+print(a)
+print(allocator.maxMemory())
+print(allocator.currMemory())
+print(allocator.timer())
 
 p = randpermutation(4)
-print(len(p))
+s = set()
 for k in range(4*3*2*1):
-  for i in range(4):
-    print(p[i], end=" ")
+  s.add(tuple(p[i] for i in range(4)))
   p.next()
-  print()
+pprint(s)
+print(len(s))
 
-m = monom(1, 2, 2, a)
-print(len(m))
-for i in range(len(m)):
-  print(m[i], end=" ")
+m = [monom.variable(i, 5, -1) for i in range(5)]
+print(len(m[4]))
+for i in range(len(m[4])):
+  print(m[4][i], end=" ")
 print()
-print(m.degree())
-print(m.pos())
+m1 = m[0]**4*m[1]*m[4]**4
+for d in m1:
+  print(d, end="-")
+print()
+print(m1)
+#w = wrap(a, m1)
+#print(w.lm())
+#print(w)
+#m1.setPos(3)
+print(m1.pos())
+print(repr(m1))
+print(m1.degree())
+print(a)
+print(m1.divisiable(m[4]**4))
 
-print("alloc: %d, size: %d" % (
-    a.alloc(),
-    a.size()
-  )
-)
+print(allocator.maxMemory())
+print(allocator.currMemory())
+print(allocator.timer())
 
-del m
+monom.rand_init(6, 2, 9)
+for i in range(15):
+  m = monom.next()
+  m *= m
+  print(m)
 
-print("alloc: %d, size: %d" % (
-    a.alloc(),
-    a.size()
-  )
-)
+division = ("lexGB", "alexGB", "GB")
+x = [monom.variable(i, 3, -1) for i in range(3)]
+lst = (x[0]**2*x[2], x[0]*x[1], x[0]*x[2], x[2]**2)
+for d in division:
+  basis = mcompletion(d)
+  for m in lst:
+    basis.push(m)
+
+  basis.build()
+  print("\n", d)
+  for w in basis:
+    print(w)
+  print("-"*10, d)
+  del basis
+
+j = mjanet()
+b = mcompletion("janet")
+monom.rand_init(3, 2, 9)
+for i in range(6):
+  m = monom.next()
+  print(m)
+  j.push(m)
+  b.push(m)
+j.draw("pdf", "janet1.pdf")
+j.build()
+b.build()
+#for w in j:
+  #print(w)
+#print("j"*10)
+for w in b:
+  print(w)
+print("b"*10)
+print(len(j), "==", len(b))
+j.draw("pdf", "janet.pdf")
+del b
+del j
+
+print(allocator.maxMemory())
+print(allocator.currMemory())
+print(allocator.timer())
