@@ -69,6 +69,7 @@ public:
     Monom::Variable degree() const { assert(i); return i->mDeg; }
 
     void setNM(Monom::Variable var);
+//     Monom::Variable nextDegree() const;
 
     bool assertValid();
   };
@@ -122,12 +123,10 @@ public:
       mRoot(nullptr) {
   }
   ~Janet() {
-    std::cerr << "D " << mAllocator->size() << std::endl;
     if (mRoot) {
       Janet::Iterator j(mRoot);
       j.clear(mAllocator);
     }
-    std::cerr << "E " << mAllocator->size() << std::endl;
     assert(mRoot == nullptr);
   }
 

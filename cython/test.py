@@ -97,11 +97,27 @@ for d in division:
   print("-"*10, d)
   del basis
 
+#[1 0 2]
+#[2 1 3]
+#[1 3 3]
+#[2 0 1]
+#[2 5 1]
+#[0 3 1]
+lst = (\
+  x[0]**1*x[1]**0*x[2]**2,\
+  x[0]**2*x[1]**1*x[2]**3,\
+  x[0]**1*x[1]**3*x[2]**3,\
+  x[0]**2*x[1]**0*x[2]**1,\
+  x[0]**2*x[1]**5*x[2]**1,\
+  x[0]**0*x[1]**3*x[2]**1,\
+)
+
 j = mjanet()
 b = mcompletion("janet")
-monom.rand_init(3, 2, 9)
-for i in range(6):
-  m = monom.next()
+#monom.rand_init(3, 2, 9)
+#for i in range(6):
+  #m = monom.next()
+for m in lst:
   print(m)
   j.push(m)
   b.push(m)

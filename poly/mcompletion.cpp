@@ -93,31 +93,25 @@ Wrap* MCompletion::find(const Monom& m) const {
 }
 
 void MJanet::clear(Allocator* allocator, Janet::ConstIterator j) {
-  while(j.nextDeg()) {
+  while(j) {
+    if (j.wrap())
+      allocator->destroy(j.wrap());
     if (j.nextVar())
       clear(allocator, j.nextVar());
     j.deg();
   }
-  if (j.nextVar())
-    clear(allocator, j.nextVar());
-  else
-  if (j.wrap())
-    allocator->destroy(j.wrap());
 }
 
 void MJanet::prolong(Janet::ConstIterator j) {
-  while(j.nextDeg()) {
-    if (j.nextVar())
-      prolong(j.nextVar());
-    j.deg();
-  }
-  if (j.nextVar())
-    prolong(j.nextVar());
-  else
+  while(j) {
     if (j.wrap())
       for(int k=0; k < j.wrap()->lm().size(); k++)
         if (j.wrap()->NM(k) && !j.wrap()->build(k))
           mQ.push(new(mAllocator) Wrap(mAllocator, k, j.wrap()));
+    if (j.nextVar())
+      prolong(j.nextVar());
+    j.deg();
+  }
 }
 
 MJanet::~MJanet() {

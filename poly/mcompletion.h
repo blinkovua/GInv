@@ -120,6 +120,7 @@ public:
   ~MJanet();
 
   void push(const Monom& m) {
+//     mQ.push(new(mAllocator) Wrap(mAllocator, m));
     mJanet.insert(new(mAllocator) Wrap(mAllocator, m));
   }
   void build();

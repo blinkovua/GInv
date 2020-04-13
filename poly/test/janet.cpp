@@ -81,7 +81,9 @@ void JanetPoly::test1() {
   Janet janet(allocator);
   List<Wrap*> T(allocator);
   while(Q) {
+    std::cerr << "aaa " << std::endl;
     for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
+      std::cerr << "aa " << j.data()->lm() << std::endl;
       if (janet.find(j.data()->lm()))
         allocator->destroy(j.data());
       else {
