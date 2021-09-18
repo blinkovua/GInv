@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2009 by Blinkov Yu. A.                                  *
+ *   Copyright (C) 2021 by Blinkov Yu. A.                                  *
  *   BlinkovUA@info.sgu.ru                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,55 +18,27 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/config/SourcePrefix.h>
+#include "poly.h"
 
-#include <cstdlib>
-#include <ctime>
+namespace GInv {
 
-#include "poly/integer.h"
+Poly::Poly(Allocator* allocator, const Poly& a);
 
-using namespace GInv;
+Poly::~Poly();
 
-class TestInteger: public CPPUNIT_NS::TestFixture {
-  CPPUNIT_TEST_SUITE(TestInteger);
-//   CPPUNIT_TEST(test1);
-//   CPPUNIT_TEST(test2);
-  CPPUNIT_TEST_SUITE_END();
+void Poly::swap(Poly& a);
 
-public:
-  void setUp();
-  void tearDown();
+void Poly::operator=(Poly &&a) {
 
-  void test1();
-  void test2();
-};
+void Poly::operator=(const Poly &a);
 
-CPPUNIT_TEST_SUITE_REGISTRATION(TestInteger);
+int Poly::norm() const;
 
-void TestInteger::setUp() {
+void Poly::nf(Janet &a);
+void Poly::nfTail(Janet &a);
+bool Poly::isPp() const;
+void Poly::pp();
+
+std::ostream& operator<<(std::ostream& out, const Poly &a);
+  
 }
-
-void TestInteger::tearDown() {
-}
-
-
-void TestInteger::test1() {
-  Allocator allocator[1];
-
-  Integer a(allocator);
-  std::cout << a.get_str(16) << std::endl;
-  a.set_si(-12652);
-
-  Integer b(allocator);
-  CPPUNIT_ASSERT(b.set_str("-12652162536153671253192376141540340646456346", 10) == 0);
-  std::cout << b.get_str(10) << std::endl;
-
-  Integer c(allocator);
-  c.add(b, b);
-  std::cout << c.get_str(10) << std::endl;
-}
-
-void TestInteger::test2() {
-}
-

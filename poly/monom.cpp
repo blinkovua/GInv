@@ -96,7 +96,7 @@ Monom::Monom(Allocator* allocator, Variable v, int size, int pos):
   do {
     *i++ = 0;
   } while(i < iend);
-  mVariables[v]++;
+  ++mVariables[v];
   assert(assertValid());
 }
 
@@ -142,7 +142,7 @@ Monom::Monom(Allocator* allocator, Variable v, const Monom& a):
   do {
     *i++ = *ia++;
   } while(i < iend);
-  mVariables[v]++;
+  ++mVariables[v];
   assert(assertValid());
 }
 

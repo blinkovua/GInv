@@ -24,21 +24,24 @@ namespace GInv {
 
 void MCompletion::insert(Wrap *w) {
   ListWrap::Iterator j(mT.begin());
-  while(j && mCmp(*j.data(), *w) > 0) {
+  while(j && mCmp(*j.data(), *w) < 0) {
     for(int v=0; v < w->lm().size(); v++) {
-      if (j.data()->lm()[v] > w->lm()[v]) {
-        w->setNM(v);
+      if (w->lm()[v] > j.data()->lm()[v]) {
+        j.data()->setNM(v);
         break;
       }
     }
     ++j;
   }
-  j.insert(w);
+  if (!j || mCmp(*j.data(), *w) > 0)
+    j.insert(w);
+  else
+    mAllocator->destroy(w);
   ++j;
   while(j) {
     for(int v=0; v < w->lm().size(); v++) {
-      if (w->lm()[v] > j.data()->lm()[v]) {
-        j.data()->setNM(v);
+      if (j.data()->lm()[v] > w->lm()[v]) {
+        w->setNM(v);
         break;
       }
     }
@@ -71,6 +74,7 @@ void MCompletion::build() {
       else
         insert(j.data());
     }
+//     break;
     prolong();
   }
 }
@@ -115,12 +119,12 @@ void MJanet::prolong(Janet::ConstIterator j) {
 }
 
 MJanet::~MJanet() {
-  std::cerr << "A " << mAllocator->size() << std::endl;
+//   std::cerr << "A " << mAllocator->size() << std::endl;
   for(ListWrap::Iterator j(mQ.begin()); j; ++j)
     mAllocator->destroy(j.data());
-  std::cerr << "B " << mAllocator->size() << std::endl;
+//   std::cerr << "B " << mAllocator->size() << std::endl;
   clear(mAllocator, mJanet.begin());
-  std::cerr << "C " << mAllocator->size() << std::endl;
+//   std::cerr << "C " << mAllocator->size() << std::endl;
 }
 
 void MJanet::build() {

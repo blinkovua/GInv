@@ -21,7 +21,12 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/config/SourcePrefix.h>
 
+#include "util/timer.h"
+#include "util/list.h"
+#include "util/randpermutation.h"
+
 #include "poly/janet.h"
+#include "poly/mcompletion.h"
 
 using namespace GInv;
 
@@ -30,10 +35,6 @@ class JanetPoly: public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST(test1);
   CPPUNIT_TEST(test2);
   CPPUNIT_TEST(test3);
-  CPPUNIT_TEST(test4);
-  CPPUNIT_TEST(test5);
-  CPPUNIT_TEST(test6);
-  CPPUNIT_TEST(test7);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -43,10 +44,6 @@ public:
   void test1();
   void test2();
   void test3();
-  void test4();
-  void test5();
-  void test6();
-  void test7();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(JanetPoly);
@@ -59,435 +56,276 @@ void JanetPoly::tearDown() {
 
 
 void JanetPoly::test1() {
-  const int n(5);
-  Allocator allocator[1];
-  Monom v[]={
-    {allocator, 0, n, -1},
-    {allocator, 1, n, -1},
-    {allocator, 2, n, -1},
-    {allocator, 3, n, -1},
-    {allocator, 4, n, -1},
-  };
-  List<Wrap*> Q(allocator);
+  const int l=99,  // число экспериментов
+            n=15,  // число мономов
+            s=10,  // число переменных
+            d1=3,  // минимальная степень переменной
+            d2=10; // максимальная степень переменной
 
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[1]*v[4]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*v[2]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[2]*v[2]*v[2]));
+  Monom::rand_init(s, d1, d2);
 
-  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-    std::cerr << j.data()->lm() << std::endl;
-  std::cerr << Q.length() << std::endl;
-
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    std::cerr << "aaa " << std::endl;
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      std::cerr << "aa " << j.data()->lm() << std::endl;
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
+  for(int i=0; i < l; i++) {
+//     std::cerr << i << ' ';
+    Allocator allocator[1];
+    List<Wrap*> Q(allocator);
+    Janet janet(allocator);
+    for(int k=0; k < n; k++) {
+      Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator)));
+//       std::cerr << w->lm() << std::endl;
+      if (janet.find(w->lm()))
+        allocator->destroy(w);
       else {
-        janet.insert(j.data());
-        T.push(j.data());
+//         std::cerr << w->lm() << std::endl;
+        janet.insert(w);
+        Q.push(w);
       }
     }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
-          tmp.push(w);
-        }
-    tmp.swap(Q);
-  }
 
-#ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test1.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+    for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
+      CPPUNIT_ASSERT(janet.find(j.data()->lm()) == j.data());
 
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    for(int v=0; v < n; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(m));
+    MCompletion basis(allocator, MCompletion::lex);
+    for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
+      basis.push(Monom(allocator, j.data()->lm()));
+
+    CPPUNIT_ASSERT(janet.size() == basis.length());
+
+    for(List<Wrap*>::ConstIterator j(basis.T().begin()); j; ++j) {
+      const Wrap* wrap=janet.find(j.data()->lm());
+      CPPUNIT_ASSERT(wrap->lm().lex(j.data()->lm()) == 0);
+      for(int v=0; v < s; v++)
+        CPPUNIT_ASSERT(wrap->NM(v) == j.data()->NM(v));
     }
 
-//   std::cerr << "Janet = " << janet.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2])->lm() << std::endl;
-  CPPUNIT_ASSERT(janet.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2]));
-  CPPUNIT_ASSERT(T.length() == janet.size());
+#ifdef GINV_POLY_GRAPHVIZ
+    if (i+1 == l)
+      janet.draw("pdf", "janet_test1.pdf");
+#endif // GINV_POLY_GRAPHVIZ
 
-//   std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
+    for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
+        allocator->destroy(j.data());
+  }
+//   std::cerr << std::endl;
 }
 
 void JanetPoly::test2() {
-  const int n(6);
-  Allocator allocator[1];
-  Monom v[]={
-    {allocator, 0, n, -1},
-    {allocator, 1, n, -1},
-    {allocator, 2, n, -1},
-    {allocator, 3, n, -1},
-    {allocator, 4, n, -1},
-    {allocator, 5, n, -1},
-  };
-  List<Wrap*> Q(allocator);
+  const int l=99,  // число экспериментов
+            s=3,    // число переменных
+            n=5,   // число мономов
+            d1=3,  // минимальная степень переменной
+            d2=5; // максимальная степень переменной
 
-//   [1 0 0 0 0 1]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[5]));
-//   [0 1 0 0 2 1]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*v[4]*v[4]*v[5]));
-//   [0 1 4 0 0 2]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*Monom(allocator, v[2], 4)*v[5]*v[5]));
-//   [0 2 1 0 0 0]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[2]));
-//   [1 0 0 1 0 0]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[3]));
-//   [0 0 2 1 3 1]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 2)*v[3]*Monom(allocator, v[4], 3)*v[5]));
+  Monom::rand_init(s, d1, d2);
 
-//   for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-//     std::cerr << j.data()->lm() << std::endl;
-//   std::cerr << Q.length() << std::endl;
-
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
+  for(int i=0; i < l; i++) {
+//     std::cerr << i << ' ';
+    Allocator allocator[1];
+    List<Wrap*> Q(allocator);
+    MCompletion basis(allocator, MCompletion::lex);
+    for(int k=0; k < n; k++) {
+      Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator)));
+//       std::cerr << w->lm() << std::endl;
+      if (basis.find(w->lm()))
+        allocator->destroy(w);
       else {
-        janet.insert(j.data());
-        T.push(j.data());
+//         std::cerr << w->lm() << std::endl;
+        ListWrap::Iterator j(Q.begin());
+        while(j && j.data()->lm().lex(w->lm()) < 0)
+          ++j;
+        j.insert(w);
+        basis.push(w->lm());
       }
     }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-          tmp.push(w);
+
+    basis.build();
+
+    Janet janet(allocator);
+    List<Wrap*> T(allocator);
+    bool first=true;
+    bool draw=false;
+    while(Q) {
+      for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
+        if (janet.find(j.data()->lm()))
+          allocator->destroy(j.data());
+        else {
+          janet.insert(j.data());
+          ListWrap::Iterator k(T.begin());
+          while(k && k.data()->lm().lex(j.data()->lm()) < 0)
+            ++k;
+          k.insert(j.data());
         }
-    tmp.swap(Q);
-  }
+      }
+//       if (!first)
+//         break;
 #ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test2.pdf");
+      if (first && i+1 == l) {
+        janet.draw("pdf", "janet_test21b.pdf");
+        first = false;
+      }
+#endif // GINV_POLY_GRAPHVIZ
+      List<Wrap*> tmp(allocator);
+      for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+        for(int k=0; k < j.data()->lm().size(); k++)
+          if (j.data()->NM(k) && !j.data()->build(k)) {
+            Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+            ListWrap::Iterator j(tmp.begin());
+            while(j && j.data()->lm().lex(w->lm()) < 0)
+              ++j;
+            j.insert(w);
+          }
+      tmp.swap(Q);
+      first = false;
+    }
+
+//     std::cerr << janet.size() << " " << basis.length() << std::endl;
+
+//     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
+//       const Wrap* wrap=basis.find(j.data()->lm());
+//       CPPUNIT_ASSERT(wrap->lm().lex(j.data()->lm()) == 0);
+//       if (wrap) {
+//       for(int v=0; v < s; v++)
+//         if (wrap->NM(v) != j.data()->NM(v)) {
+//           std::cerr << *wrap << "-" << *j.data() << std::endl;
+//           draw = true;
+//           break;
+//         }
+//       }
+//       else
+//         std::cerr << "*" << *j.data() << std::endl;
+//     }
+//     if (draw) {
+//       janet.draw("pdf", "janet_test2e.pdf");
+//       for(List<Wrap*>::ConstIterator j(basis.T().begin()); j; ++j)
+//         std::cerr << "-" << *j.data() << std::endl;
+//       assert(false);
+//     }
+
+    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
+      Allocator allocator1[1];
+      for(int v=0; v < s; v++) {
+        Monom m(allocator1, v, j.data()->lm());
+        if (janet.find(m) == nullptr) {
+          janet.draw("pdf", "janet_test21e.pdf");
+          std::cerr << j.data()->lm() << m << std::endl;
+          assert(false);
+        }
+      }
+    }
+
+#ifdef GINV_POLY_GRAPHVIZ
+    if (i+1 == l)
+      janet.draw("pdf", "janet_test21e.pdf");
 #endif // GINV_POLY_GRAPHVIZ
 
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
-    Allocator allocator[1];
-    for(int v=0; v < n; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(j.data()->lm()));
-    }
-  }
-
-  CPPUNIT_ASSERT(T.length() == janet.size());
+    CPPUNIT_ASSERT(T.length() == janet.size());
 //   std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
+    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+      allocator->destroy(j.data());
+  }
+//   std::cerr << std::endl;
+}
+
+
+inline int lex(const Wrap& a, const Wrap& b) {
+  return a.lm().lex(b.lm());
 }
 
 void JanetPoly::test3() {
-  Allocator allocator[1];
-  const int n=30;
-  const int s=5, d1=2, d2=7;
+  const int l=10,  // число экспериментов
+            p=10,   // число перестановок
+            n=5,   // число мономов
+            s=3,    // число переменных
+            d1=3,   // минимальная степень переменной
+            d2=10;  // максимальная степень переменной
+
+  RandPermutation_mt19937 per(s);
   Monom::rand_init(s, d1, d2);
-  List<Wrap*> Q(allocator);
-  for(int i=0; i < n; i++)
-    Q.push(new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator))));
 
-  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-    std::cerr << j.data()->lm() << std::endl;
-  std::cerr << Q.length() << std::endl;
-
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
-      else {
-        janet.insert(j.data());
-        T.push(j.data());
-      }
-    }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
-          tmp.push(w);
-        }
-    tmp.swap(Q);
-  }
-#ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test3.pdf");
-#endif // GINV_POLY_GRAPHVIZ
-
-
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
+  int sumJanet=0;
+  int sumLex=0;
+  Timer timerJanet, timerLex;;
+   for(int i=0; i < l; i++) {
     Allocator allocator[1];
-    for(int v=0; v < s; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(j.data()->lm()));
+    List<Wrap*> Qbase(allocator);
+    for(int k=0; k < n; k++) {
+      Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator)));
+      Qbase.push(w);
     }
-  }
 
-
-  CPPUNIT_ASSERT(T.length() == janet.size());
-  std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
-}
-
-
-void JanetPoly::test4() {
-  const int n(5);
-  Allocator allocator[1];
-  Monom v[]={
-    {allocator, 0, n, -1},
-    {allocator, 1, n, -1},
-    {allocator, 2, n, -1},
-    {allocator, 3, n, -1},
-    {allocator, 4, n, -1},
-  };
-  List<Wrap*> Q(allocator);
-
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2])));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[1]*v[4]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*v[2]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[2]*v[2]*v[2]));
-
-  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-    std::cerr << j.data()->lm() << std::endl;
-  std::cerr << Q.length() << std::endl;
-
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
-      else {
-        janet.insert(j.data());
-        T.push(j.data());
-      }
-    }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
-          tmp.push(w);
+    for(int p1=0; p1 < p; p1++) {
+      timerJanet.cont();
+      {
+        Allocator allocator[1];
+        List<Wrap*> Q(allocator);
+        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j) {
+          Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, j.data()->lm(), per));
+          Q.push(w);
         }
-    tmp.swap(Q);
-  }
 
-#ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test4.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+        Janet janet(allocator);
+        List<Wrap*> T(allocator);
+        while(Q) {
+          for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
+            if (janet.find(j.data()->lm()))
+              allocator->destroy(j.data());
+            else {
+              janet.insert(j.data());
+              T.push(j.data());
+            }
+          }
 
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    for(int v=0; v < n; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(m));
-    }
-
-//   std::cerr << "Janet = " << janet.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2])->lm() << std::endl;
-  CPPUNIT_ASSERT(janet.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2]));
-  CPPUNIT_ASSERT(T.length() == janet.size());
-
-//   std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
-}
-
-void JanetPoly::test5() {
-  const int n(5);
-  Allocator allocator[1];
-  Monom v[]={
-    {allocator, 0, n, -1},
-    {allocator, 1, n, -1},
-    {allocator, 2, n, -1},
-    {allocator, 3, n, -1},
-    {allocator, 4, n, -1},
-  };
-  List<Wrap*> Q(allocator);
-
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[1]*v[4]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*v[2]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[2]*v[2]*v[2]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2])));
-
-  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-    std::cerr << j.data()->lm() << std::endl;
-  std::cerr << Q.length() << std::endl;
-
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
-      else {
-        janet.insert(j.data());
-        T.push(j.data());
-      }
-    }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
-          tmp.push(w);
+          List<Wrap*> tmp(allocator);
+          for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+            for(int k=0; k < j.data()->lm().size(); k++)
+              if (j.data()->NM(k) && !j.data()->build(k)) {
+                Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+                tmp.push(w);
+              }
+          tmp.swap(Q);
         }
-    tmp.swap(Q);
-  }
-
-#ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test5.pdf");
-#endif // GINV_POLY_GRAPHVIZ
-
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    for(int v=0; v < n; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(m));
-    }
-
-//   std::cerr << "Janet = " << janet.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2])->lm() << std::endl;
-  CPPUNIT_ASSERT(janet.find(Monom(allocator, v[0])*v[1]*v[2]*v[2]*v[2]));
-  CPPUNIT_ASSERT(T.length() == janet.size());
-
-//   std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
-}
-
-void JanetPoly::test6() {
-  const int n(3);
-  Allocator allocator[1];
-  Monom v[]={
-    {allocator, 1, n, -1},
-    {allocator, 0, n, -1},
-//     {allocator, 1, n, -1},
-    {allocator, 2, n, -1},
-  };
-  List<Wrap*> Q(allocator);
-
-//   {201,120,400,103,040}
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 2)*v[2]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[0]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 4)));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 3)*v[0]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 4)));
-
-  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-    std::cerr << j.data()->lm() << std::endl;
-  std::cerr << Q.length() << std::endl;
-
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
-      else {
-        janet.insert(j.data());
-        T.push(j.data());
-      }
-    }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
-          tmp.push(w);
+        for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
+          for(int v=0; v < s; v++) {
+            Monom m(allocator, v, j.data()->lm());
+            CPPUNIT_ASSERT(janet.find(m));
+          }
         }
-    tmp.swap(Q);
-  }
-
-#ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test6.pdf");
-#endif // GINV_POLY_GRAPHVIZ
-
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    for(int v=0; v < n; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(m));
-    }
-
-  CPPUNIT_ASSERT(T.length() == janet.size());
-
-//   std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
-}
-
-void JanetPoly::test7() {
-  const int n(5);
-  Allocator allocator[1];
-  Monom v[]={
-    {allocator, 0, n, -1},
-    {allocator, 2, n, -1},
-    {allocator, 3, n, -1},
-    {allocator, 1, n, -1},
-    {allocator, 4, n, -1},
-  };
-  List<Wrap*> Q(allocator);
-
-//   {22001, 02105, 01010,00200, 00112}
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 2)*Monom(allocator, v[1], 2)*v[4]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[2]*v[4]));
-  Q.push(new(allocator) Wrap(allocator,Monom(allocator, v[1])*v[3]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 2)));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[4], 2)*v[2]*v[3]));
 
 
-  for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
-    std::cerr << j.data()->lm() << std::endl;
-  std::cerr << Q.length() << std::endl;
+        assert(T.length() == janet.size());
+        std::cout << "Janet = " << T.length() << "  " << std::endl;
+//         for(List<Wrap*>::ConstIterator k(T.begin()); k; ++k)
+//           std::cerr << *k.data() << std::endl;
+        sumJanet += T.length();
 
-  Janet janet(allocator);
-  List<Wrap*> T(allocator);
-  while(Q) {
-    for(List<Wrap*>::Iterator j(Q.begin()); j; j.del()) {
-      if (janet.find(j.data()->lm()))
-        allocator->destroy(j.data());
-      else {
-        janet.insert(j.data());
-        T.push(j.data());
+        for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
+          allocator->destroy(j.data());
       }
+      timerJanet.stop();
+
+      timerLex.cont();
+      {
+        Allocator allocator[1];
+        MCompletion basis(allocator, MCompletion::lex);
+        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
+          basis.push(Monom(allocator, j.data()->lm(), per));
+
+        basis.build();
+
+        std::cerr << "lex = " << basis.T().length() << std::endl;
+        sumLex += basis.length();
+      }
+      timerLex.stop();
+
+      per.next();
     }
-    List<Wrap*> tmp(allocator);
-    for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-      for(int k=0; k < j.data()->lm().size(); k++)
-        if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
-//           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
-          tmp.push(w);
-        }
-    tmp.swap(Q);
+
+
+    for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
+      allocator->destroy(j.data());
   }
+  std::cerr << "Janet - " << sumJanet << std::endl;
+  std::cerr << timerJanet << std::endl;
+  std::cerr << "Lex - " << sumLex << std::endl;
+  std::cerr << timerLex << std::endl;
 
-#ifdef GINV_POLY_GRAPHVIZ
-  janet.draw("pdf", "janet_test7.pdf");
-#endif // GINV_POLY_GRAPHVIZ
-
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    for(int v=0; v < n; v++) {
-      Monom m(allocator, v, j.data()->lm());
-      CPPUNIT_ASSERT(janet.find(m));
-    }
-
-  CPPUNIT_ASSERT(T.length() == janet.size());
-
-//   std::cerr << "Janet = " << T.length() << std::endl;
-  for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
-    allocator->destroy(j.data());
 }

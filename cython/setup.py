@@ -29,5 +29,5 @@ setup(
     author = "Blinkov Yu.A.",
     author_email = "BlinkovUA@info.sgu.ru",
     url = "http://invo.jinr.ru",
-    ext_modules=cythonize(extensions, language="c++"),
+    ext_modules=cythonize(extensions, language_level = "3"),
 )

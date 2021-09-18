@@ -98,7 +98,7 @@ protected:
       Link tmp = *i;
       assert(tmp);
       *i = tmp->mNextDeg;
-      allocator->destroy(tmp);
+      allocator->dealloc(tmp);
     }
     void clear(Allocator* allocator);
   };
@@ -116,10 +116,10 @@ protected:
   static void setMNsucc(Wrap *wrap, int v,  ConstIterator j);
 
 public:
-  explicit Janet(Allocator* allocator):
+  explicit Janet(Allocator* allocator, int pos=-1):
       mAllocator(allocator),
       mSize(0),
-      mPos(0),
+      mPos(pos),
       mRoot(nullptr) {
   }
   ~Janet() {

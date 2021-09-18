@@ -50,12 +50,11 @@ void Janet::Iterator::build(int d, Monom::Variable var, Wrap *wrap, Allocator* a
 }
 
 void Janet::Iterator::clear(Allocator* allocator) {
-  while (nextDeg()) {
+  while(*i) {
     if (nextVar())
       Janet::Iterator((*i)->mNextVar).clear(allocator);
     del(allocator);
   }
-  del(allocator);
 }
 
 void Janet::ConstIterator::setNM(Monom::Variable var) {
@@ -63,11 +62,13 @@ void Janet::ConstIterator::setNM(Monom::Variable var) {
   while(nextDeg()) {
     if (nextVar())
       nextVar().setNM(var);
+    if (wrap())
+      wrap()->setNM(var);
     deg();
   }
   if (nextVar())
     nextVar().setNM(var);
-  else
+  if (wrap())
     wrap()->setNM(var);
 }
 
@@ -196,7 +197,7 @@ void Janet::setMNsucc(Wrap *wrap, int v,  ConstIterator j) {
 
 
 Wrap* Janet::find(const Monom &m) const {
-  assert(mRoot == nullptr || mPos == m.pos());
+  assert(mPos == m.pos());
   Link root=mRoot;
   Wrap* wrap=nullptr;
 
@@ -210,23 +211,50 @@ Wrap* Janet::find(const Monom &m) const {
     }
     else {
       do {
+        assert(j);
+        assert(d > 0);
+        assert(var < m.size());
+
         while(j.degree() < m[var] && j.nextDeg())
           j.deg();
 
         if (j.degree() > m[var])
           break;
-        else if (j.nextVar() && !(j.degree() == d && j.wrap())) {
-          d -= m[var];
-          if (d == 0)
-            break;
-          ++var;
-          j.var();
-        }
         else {
-          wrap = j.wrap();
-          assert(wrap != NULL);
-          assert(wrap->lm() | m);
-          break;
+          d -= m[var];
+          if (d == 0) {
+            if (j.wrap() || (j.degree() < m[var] && !j.nextVar())) {
+//             if (j.wrap()) {
+//               if (j.degree() < m[var] && !j.nextVar())
+//                 std::cerr << "****************" << std::endl;
+              assert(j.wrap());
+              wrap = j.wrap();
+              assert(wrap->lm() | m);
+            }
+            break;
+          }
+          if (j.wrap()) {
+            int v=0;
+            for(; v < m.size(); v++) {
+              if (j.wrap()->lm()[v] > m[v] ||
+                (j.wrap()->lm()[v] < m[v] && j.wrap()->NM(v)))
+                break;
+            }
+            if (v == m.size()) {
+              wrap = j.wrap();
+              break;
+            }
+          }
+          if (j.nextVar()) {
+            ++var;
+            j.var();
+          }
+          else {
+            assert(j.wrap());
+            wrap = j.wrap();
+            assert(wrap->lm() | m);
+            break;
+          }
         }
       } while(true);
     }
@@ -236,63 +264,88 @@ Wrap* Janet::find(const Monom &m) const {
 
 void Janet::insert(Wrap *wrap) {
   assert(wrap != nullptr);
-//   if (find(wrap->lm()) != nullptr) {
-//     std::cerr << "warp " << wrap->lm() << std::endl;
-//     std::cerr << "find " << find(wrap->lm())->lm() << std::endl;
-//     draw("pdf", "janet_insert1.pdf");
-//   }
-//   assert(find(wrap->lm()) == nullptr); TODO
+  assert(mPos == wrap->lm().pos());
+  assert(find(wrap->lm()) == nullptr);
 
   Link &root = mRoot;
   unsigned d = wrap->lm().degree();
   Janet::Iterator j(root);
 
-  if (root == nullptr) {
-    mPos = wrap->lm().pos();
+  if (root == nullptr)
     j.build(d, 0, wrap, mAllocator);
-  }
   else {
-    int var = 0;
+    Monom::Variable var = 0;
     do {
       assert(j);
+      assert(d > 0);
+      assert(var < wrap->lm().size());
+
       while(j.degree() < wrap->lm()[var] && j.nextDeg())
         j.deg();
 
       if (j.degree() > wrap->lm()[var]) {
         wrap->setNM(var);
-        assert(d > 0);
         j.build(d, var, wrap, mAllocator);
         break;
       }
-      else if (j.degree() == wrap->lm()[var]) {
-        if (j.nextDeg())
-          wrap->setNM(var);
-        d -= wrap->lm()[var];
-        if (d == 0) {
-//           j.wrap() = wrap;
-          break;
-        }
-        ++var;
-        j.var();
-        assert(j);// TODO
-      }
-      else {
-        if (j.nextVar())
-          Janet::ConstIterator(j).nextVar().setNM(var);
+      else if (j.degree() < wrap->lm()[var]) {
+        assert(!j.nextDeg());
         if (j.wrap())
           j.wrap()->setNM(var);
+        if (j.nextVar())
+          Janet::ConstIterator(j).nextVar().setNM(var);
         j.deg();
-        assert(d > 0);
         j.build(d, var, wrap, mAllocator);
         break;
+      }
+      else { //TODO
+        assert(j.degree() == wrap->lm()[var]);
+        if (j.nextDeg())
+          wrap->setNM(var);
+        if (j.wrap())
+          for(int v=var+1; v < wrap->lm().size(); v++)
+            if (wrap->lm()[v] > j.wrap()->lm()[v]) {
+              j.wrap()->setNM(v);
+              break;
+            }
+        d -= wrap->lm()[var];
+        if (d == 0) {
+          assert(j.wrap() == nullptr);
+          j.wrap() = wrap;
+          if (j.nextVar()) {
+            do {
+              assert(var < wrap->lm().size());
+              assert(j.nextVar());
+              j.var();
+              ++var;
+              if (j.degree() > 0 || j.nextDeg())
+                wrap->setNM(var);
+            } while(j.degree() == 0 && j.nextVar());
+          }
+          break;
+        }
+        else {
+          if (!j.nextVar()) {
+            assert(j.wrap());
+            Monom::Variable v=var+1;
+            while(wrap->lm()[v] == 0) {
+              ++v;
+              assert(v < wrap->lm().size());
+            }
+            j.wrap()->setNM(v);
+          }
+          ++var;
+          j.var();
+          if (!j) {
+            j.build(d, var, wrap, mAllocator);
+            break;
+          }
+        }
       }
     } while(true);
   }
   ++mSize;
-//   if (find(wrap->lm()) == nullptr) {
-//     std::cerr << "find " << wrap->lm() << std::endl;
-//     draw("pdf", "janet_insert0.pdf");
-//   }
+
   assert(find(wrap->lm()) != nullptr);
   assert(Janet::ConstIterator(root).assertValid());
 }

@@ -27,9 +27,9 @@ using namespace GInv;
 
 class MCompletionPoly: public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST_SUITE(MCompletionPoly);
-  CPPUNIT_TEST(test1);
-  CPPUNIT_TEST(test6);
-  CPPUNIT_TEST(test7);
+//   CPPUNIT_TEST(test1);
+//   CPPUNIT_TEST(test6);
+//   CPPUNIT_TEST(test7);
   CPPUNIT_TEST_SUITE_END();
 
 public:

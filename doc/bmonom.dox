@@ -1,0 +1,20 @@
+/**
+@file poly/bmonom.h
+\brief Содержит класс для работы GInv::BMonom.
+
+Содержит класс GInv::BMonom.
+
+\class GInv::BMonom
+\brief Определяет работу с переменными.
+
+Представляют собой список переменных. Определяет
+набор функций по чтению и выводу переменных на печать.
+
+\var GInv::Allocator*  GInv::BMonom::mAllocator;
+\brief Определяет список переменных.
+
+
+\fn void GInv::BMonom::swap(GInv::BMonom& a);
+\brief Определяет список переменных.
+
+*/
