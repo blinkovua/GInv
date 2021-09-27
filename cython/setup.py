@@ -8,18 +8,19 @@ extensions = [
           "../../util/",
           "../../poly/",
           "../../",
-          ],
+        ],
         libraries = [
           "ginvpoly",
           "ginvutil",
+          "gmp",
           "cgraph",
           "gvc",
-          ],
+        ],
         library_dirs = [
           "../poly/",
           "../util/",
         ]
-    ),
+    )
 ]
 
 setup(

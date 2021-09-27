@@ -129,6 +129,18 @@ Monom::Monom(Allocator* allocator, const Monom& a, RandPermutation &p):
   assert(assertValid());
 }
 
+Monom::Monom(Allocator* allocator, const Monom& a, RandPermutation_mt19937 &p):
+    mAllocator(allocator),
+    mSize(a.mSize),
+    mPos(a.mPos),
+    mDegree(a.mDegree),
+    mVariables(new(allocator) Variable[a.mSize]) {
+  assert(mSize == p.size());
+  for(int v=0; v < mSize; v++)
+    mVariables[v] = a.mVariables[p[v]];
+  assert(assertValid());
+}
+
 Monom::Monom(Allocator* allocator, Variable v, const Monom& a):
     mAllocator(allocator),
     mSize(a.mSize),
@@ -304,7 +316,7 @@ int Monom::alex(const Monom& a) const {
   else if (mDegree) {
     assert(mDegree == a.mDegree);
     const Variable *i=mVariables,
-                 *ia=a.mVariables;
+                   *ia=a.mVariables;
     const Variable* const iend=mVariables+mSize;
     do {
       if (*i != *ia) {
@@ -317,6 +329,81 @@ int Monom::alex(const Monom& a) const {
   }
   return r;
 }
+
+
+int Monom::lex(const Monom& a, const Monom& b) const {
+  assert(mSize == a.mSize && mSize == b.mSize);
+  assert(a.mPos == -1 || b.mPos == -1);
+  int r=0;
+  const Variable *i=mVariables,
+                 *ia=a.mVariables,
+                 *ib=b.mVariables;
+  const Variable* const iend=mVariables+mSize;
+  do {
+    if (*i != *ia + *ib) {
+      r = (*i > *ia + *ib) ? 1: -1;
+      break;
+    }
+    ++i;
+    ++ia;
+    ++ib;
+  } while(i < iend);
+  return r;
+}
+
+int Monom::deglex(const Monom& a, const Monom& b) const {
+  assert(mSize == a.mSize && mSize == b.mSize);
+  assert(a.mPos == -1 || b.mPos == -1);
+  int r=0;
+  if (mDegree > a.mDegree + b.mDegree)
+    r = 1;
+  else if (mDegree < a.mDegree + b.mDegree)
+    r = -1;
+  else if (mDegree) {
+    assert(mDegree == a.mDegree + b.mDegree);
+    const Variable *i=mVariables + mSize - 1,
+                   *ia=a.mVariables + mSize - 1,
+                   *ib=b.mVariables + mSize - 1;
+    do {
+      if (*i != *ia + *ib) {
+        r = (*i > *ia + *ib) ? -1: 1;
+        break;
+      }
+      --i;
+      --ia;
+      --ib;
+    } while(i >= mVariables);
+  }
+  return r;
+}
+
+int Monom::alex(const Monom& a, const Monom& b) const {
+  assert(mSize == a.mSize && mSize == b.mSize);
+  assert(a.mPos == -1 || b.mPos == -1);
+  int r=0;
+  if (mDegree > a.mDegree + b.mDegree)
+    r = -1;
+  else if (mDegree < a.mDegree + b.mDegree)
+    r = 1;
+  else if (mDegree) {
+    assert(mDegree == a.mDegree + b.mDegree);
+    const Variable *i=mVariables,
+                   *ia=a.mVariables,
+                   *ib=b.mVariables;
+    const Variable* const iend=mVariables+mSize;
+    do {
+      if (*i != *ia + *ib) {
+        r = (*i > *ia + *ib) ? 1: -1;
+        break;
+      }
+      ++i;
+      ++ia;
+      ++ib;
+    } while(i < iend);
+  }
+  return r;
+}
+
 
 std::ostream& operator<<(std::ostream& out, const Monom &a) {
   out << '[';

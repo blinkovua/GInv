@@ -40,6 +40,9 @@ class Integer {
   static inline int max(int a, int b) {
     return (a >= b) ? a: b;
   }
+  static inline int min(int a, int b) {
+    return (a >= b) ? b: a;
+  }
 
   void reallocate(int size) {
     if (mMpz._mp_alloc < size) {
@@ -66,7 +69,7 @@ public:
 #endif // GINV_POLY_INTEGER_ALLOCATOR
   }
   Integer(const Integer &a)=delete;
-  Integer(const Integer &a, Allocator* allocator):
+  Integer(Allocator* allocator, const Integer &a):
       mAllocator(allocator) {
 #ifndef GINV_POLY_INTEGER_ALLOCATOR
     mpz_init(&mMpz);
@@ -105,7 +108,9 @@ public:
   bool isOne() const { return mpz_cmp_ui(&mMpz, 1ul) == 0; }
   bool isAbsOne() const { return  mpz_cmpabs_ui(&mMpz, 1ul) == 0; }
   int sgn() const { return mpz_sgn(&mMpz); }
+  int norm() const { return abs(mMpz._mp_size); }
 
+  void set_neg() { mMpz._mp_size *= -1; }
   void add(const Integer& a, const Integer& b);
   void sub(const Integer& a, const Integer& b);
   void mult(const Integer& a, const Integer& b);

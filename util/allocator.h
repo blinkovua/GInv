@@ -132,11 +132,11 @@ public:
   }
   GC(const GC &a):
       AllocatorPtr(a),
-      T(a, allocator()) {
+      T(allocator(), a) {
   }
   GC(const T &a):
       AllocatorPtr(),
-      T(a, allocator()) {
+      T(allocator(), a) {
   }
   ~GC() {}
 

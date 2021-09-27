@@ -84,9 +84,9 @@ void Integer::gcd(const Integer& a, const Integer& b) {
   assert(this != &b);
   assert(a.divisible(b));
 #ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(abs(a.mMpz._mp_size) - abs(b.mMpz._mp_size) + 1);
+  reallocate(min(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)));
 #endif // GINV_POLY_INTEGER_ALLOCATOR
-  mpz_divexact(&mMpz, &a.mMpz, &b.mMpz);
+  mpz_gcd(&mMpz, &a.mMpz, &b.mMpz);
 }
 
 const char* Integer::get_str(int base) const {

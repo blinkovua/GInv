@@ -44,7 +44,7 @@ protected:
   static int                                             sSize;
   static std::uniform_int_distribution<int>*             sDis1;
   static std::uniform_int_distribution<Monom::Variable>* sDis2;
-  
+
   void mult1(const Monom& a);
 
 public:
@@ -65,6 +65,7 @@ public:
   Monom(Allocator* allocator, Variable v, int size, int pos);
   Monom(Allocator* allocator, const Monom& a);
   Monom(Allocator* allocator, const Monom& a, RandPermutation &p);
+  Monom(Allocator* allocator, const Monom& a, RandPermutation_mt19937 &p);
   Monom(Allocator* allocator, Variable v, const Monom& a);
   Monom(Allocator* allocator, const Monom& a, const Monom& b);
   Monom(Allocator* allocator, const Monom& a, const Monom& b, bool);
@@ -102,7 +103,7 @@ public:
   }
 
   void setPos(int pos) {
-    assert(mPos == -1);
+    assert(pos >= -1);
     mPos = pos;
   }
 
@@ -112,10 +113,15 @@ public:
   int deglex(const Monom& a) const;
   int alex(const Monom& a) const;
 
+  int lex(const Monom& a, const Monom& b) const;
+  int deglex(const Monom& a, const Monom& b) const;
+  int alex(const Monom& a, const Monom& b) const;
+
+
   friend inline Monom operator*(Monom&& a, const Monom& b) {
     Monom r(std::move(a));
     r.mult1(b);
-    return std::move(r);
+    return r;
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Monom &a);
@@ -123,6 +129,7 @@ public:
   bool assertValid() const;
 };
 
+typedef GC<Monom> MonomGC;
 
 }
 
