@@ -63,8 +63,9 @@ int main(int argc, char *argv[]) {
   Allocator allocator[1];
   List<Wrap*> Q(allocator);
   Monom::rand_init(n, d1, d2);
+  Monom m(allocator, n, -1);
   for(int i=0; i < l; i++) {
-    Monom m(Monom::next(allocator));
+    Monom::rand_next(m);
     List<Wrap*>::Iterator j(Q.begin());
     while(j) {
       if (j.data()->lm().divisiable(m)) {

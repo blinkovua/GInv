@@ -45,11 +45,10 @@ protected:
   static std::uniform_int_distribution<int>*             sDis1;
   static std::uniform_int_distribution<Monom::Variable>* sDis2;
 
-  void mult1(const Monom& a);
-
 public:
   static void rand_init(int size, int deg1, int deg2);
-  static Monom next(Allocator* allocator);
+  static void rand_next(Monom& a);
+  static Monom* rand_next(Allocator* allocator);
 
   Monom()=delete;
   Monom(const Monom& a)=delete;
@@ -64,11 +63,8 @@ public:
   Monom(Allocator* allocator, int size, int pos);
   Monom(Allocator* allocator, Variable v, int size, int pos);
   Monom(Allocator* allocator, const Monom& a);
-  Monom(Allocator* allocator, const Monom& a, RandPermutation &p);
-  Monom(Allocator* allocator, const Monom& a, RandPermutation_mt19937 &p);
   Monom(Allocator* allocator, Variable v, const Monom& a);
   Monom(Allocator* allocator, const Monom& a, const Monom& b);
-  Monom(Allocator* allocator, const Monom& a, const Monom& b, bool);
   Monom(Allocator* allocator, const Monom& a, int n);
   ~Monom() {
     if (mSize)
@@ -90,6 +86,11 @@ public:
   }
   void operator=(const Monom &a);
 
+  void permutation(const Monom &a, RandPermutation &p);
+  void permutation(const Monom &a, RandPermutation_mt19937 &p) {
+    permutation(a, (RandPermutation&)p);
+  }
+
   operator bool() const { return mDegree > 0; }
   bool isZero() const { return mDegree == 0; }
 
@@ -109,6 +110,12 @@ public:
 
   bool divisiable(const Monom& a) const;
 
+  void mult(const Monom& a);
+  void div(const Monom& a);
+
+  int gcd(const Monom& a) const;
+  int lcm(const Monom& a) const;
+
   int lex(const Monom& a) const;
   int deglex(const Monom& a) const;
   int alex(const Monom& a) const;
@@ -120,7 +127,7 @@ public:
 
   friend inline Monom operator*(Monom&& a, const Monom& b) {
     Monom r(std::move(a));
-    r.mult1(b);
+    r.mult(b);
     return r;
   }
 

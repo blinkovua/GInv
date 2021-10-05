@@ -26,21 +26,6 @@ int Monom::sSize=0;
 std::uniform_int_distribution<int>* Monom::sDis1=nullptr;
 std::uniform_int_distribution<Monom::Variable>* Monom::sDis2=nullptr;
 
-void Monom::mult1(const Monom& a) {
-  assert(mSize == a.mSize);
-  assert(mPos == -1 || a.mPos == -1);
-  if (mPos == -1)
-    mPos = a.mPos;
-  mDegree +=a.mDegree;
-  Variable *i=mVariables;
-  const Variable* const iend=mVariables+mSize;
-  const Variable* ia=a.mVariables;
-  do {
-    *i++ += *ia++;
-  } while(i < iend);
-  assert(assertValid());
-}
-
 void Monom::rand_init(int size, int deg1, int deg2) {
   assert(size > 0);
   assert(0 < deg1 && deg1 <= deg2);
@@ -51,20 +36,25 @@ void Monom::rand_init(int size, int deg1, int deg2) {
   sDis2 = new std::uniform_int_distribution<Variable>(0, sSize-1);
 }
 
-Monom Monom::next(Allocator* allocator) {
+void Monom::rand_next(Monom& a) {
   assert(sDis1 && sDis2 && sSize);
   static std::random_device rd;
   static std::mt19937 gen(rd());
-  Monom r(allocator, sSize, -1);
+  assert(a.mSize == sSize);
   int deg=(*sDis1)(gen);
-  r.mDegree = deg;
+  a.mDegree = deg;
   do {
     int var=(*sDis2)(gen);
     assert(0 <= var && var < sSize);
-    r.mVariables[var]++;
+    a.mVariables[var]++;
     --deg;
   } while(deg);
-  return std::move(r);
+}
+
+Monom* Monom::rand_next(Allocator* allocator) {
+  Monom* r=new Monom(allocator, sSize, -1);
+  rand_next(*r);
+  return r;
 }
 
 Monom::Monom(Allocator* allocator, int size, int pos):
@@ -117,30 +107,6 @@ Monom::Monom(Allocator* allocator, const Monom& a):
   assert(assertValid());
 }
 
-Monom::Monom(Allocator* allocator, const Monom& a, RandPermutation &p):
-    mAllocator(allocator),
-    mSize(a.mSize),
-    mPos(a.mPos),
-    mDegree(a.mDegree),
-    mVariables(new(allocator) Variable[a.mSize]) {
-  assert(mSize == p.size());
-  for(int v=0; v < mSize; v++)
-    mVariables[v] = a.mVariables[p[v]];
-  assert(assertValid());
-}
-
-Monom::Monom(Allocator* allocator, const Monom& a, RandPermutation_mt19937 &p):
-    mAllocator(allocator),
-    mSize(a.mSize),
-    mPos(a.mPos),
-    mDegree(a.mDegree),
-    mVariables(new(allocator) Variable[a.mSize]) {
-  assert(mSize == p.size());
-  for(int v=0; v < mSize; v++)
-    mVariables[v] = a.mVariables[p[v]];
-  assert(assertValid());
-}
-
 Monom::Monom(Allocator* allocator, Variable v, const Monom& a):
     mAllocator(allocator),
     mSize(a.mSize),
@@ -176,25 +142,6 @@ Monom::Monom(Allocator* allocator, const Monom& a, const Monom& b):
   }
   do {
     *i++ = *ia++ + *ib++;
-  } while(i < iend);
-  assert(assertValid());
-}
-
-Monom::Monom(Allocator* allocator, const Monom& a, const Monom& b, bool):
-    mAllocator(allocator),
-    mSize(a.mSize),
-    mPos((a.mPos == b.mPos) ? -1: a.mPos),
-    mDegree(a.mDegree-b.mDegree),
-    mVariables(new(allocator) Variable[a.mSize]) {
-  assert(a.mSize == b.mSize);
-  assert(a.mPos == b.mPos || b.mPos == -1);
-  assert(a.divisiable(b));
-  Variable* i=mVariables;
-  const Variable* const iend=mVariables+mSize;
-  const Variable *ia=a.mVariables,
-                 *ib=b.mVariables;
-  do {
-    *i++ = *ia++ - *ib++;
   } while(i < iend);
   assert(assertValid());
 }
@@ -252,6 +199,14 @@ void Monom::operator=(const Monom &a) {
   } while(i < iend);
 }
 
+void Monom::permutation(const Monom &a, RandPermutation &p) {
+  assert(mSize == a.size());
+  assert(mSize == p.size());
+  for(int v=0; v < mSize; v++)
+    mVariables[v] = a.mVariables[p[v]];
+  assert(assertValid());
+}
+
 bool Monom::divisiable(const Monom& a) const {
   assert(mSize == a.mSize);
   bool r=a.mPos == -1 || mPos == a.mPos;
@@ -264,6 +219,52 @@ bool Monom::divisiable(const Monom& a) const {
     } while(r && i < iend);
   }
   return r;
+}
+
+void Monom::mult(const Monom& a) {
+  assert(mSize == a.mSize);
+  assert(mPos == -1 || a.mPos == -1);
+  if (mPos == -1)
+    mPos = a.mPos;
+  mDegree +=a.mDegree;
+  Variable *i=mVariables;
+  const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
+  do {
+    *i++ += *ia++;
+  } while(i < iend);
+  assert(assertValid());
+}
+
+void Monom::div(const Monom& a) {
+  assert(divisiable(a));
+  mDegree -=a.mDegree;
+  Variable *i=mVariables;
+  const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
+  do {
+    *i++ -= *ia++;
+  } while(i < iend);
+  assert(assertValid());
+}
+
+int Monom::gcd(const Monom& a) const {
+  assert(mSize == a.mSize);
+  assert(mPos == -1 || a.mPos == -1);
+  int r=0;
+  for(int i=0; i < mSize; i++)
+    r += (mVariables[i] >= a.mVariables[i]) ? mVariables[i]: a.mVariables[i];
+  return r;
+}
+
+int Monom::lcm(const Monom& a) const {
+  assert(mSize == a.mSize);
+  assert(mPos == -1 || a.mPos == -1);
+  int r=0;
+  for(int i=0; i < mSize; i++)
+    r += (mVariables[i] <= a.mVariables[i]) ? mVariables[i]: a.mVariables[i];
+  return r;
+
 }
 
 int Monom::lex(const Monom& a) const {

@@ -69,8 +69,10 @@ void JanetPoly::test1() {
     Allocator allocator[1];
     List<Wrap*> Q(allocator);
     Janet janet(allocator);
+    Monom m(allocator, s, -1);
     for(int k=0; k < n; k++) {
-      Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator)));
+      Monom::rand_next(m);
+      Wrap *w=new(allocator) Wrap(allocator, m);
 //       std::cerr << w->lm() << std::endl;
       if (janet.find(w->lm()))
         allocator->destroy(w);
@@ -122,8 +124,10 @@ void JanetPoly::test2() {
     Allocator allocator[1];
     List<Wrap*> Q(allocator);
     MCompletion basis(allocator, MCompletion::lex);
+    Monom m(allocator, s, -1);
     for(int k=0; k < n; k++) {
-      Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator)));
+      Monom::rand_next(m);
+      Wrap *w=new(allocator) Wrap(allocator, m);
 //       std::cerr << w->lm() << std::endl;
       if (basis.find(w->lm()))
         allocator->destroy(w);
@@ -247,8 +251,10 @@ void JanetPoly::test3() {
    for(int i=0; i < l; i++) {
     Allocator allocator[1];
     List<Wrap*> Qbase(allocator);
+    Monom m(allocator, s, -1);
     for(int k=0; k < n; k++) {
-      Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator)));
+      Monom::rand_next(m);
+      Wrap *w=new(allocator) Wrap(allocator, m);
       Qbase.push(w);
     }
 
@@ -257,8 +263,10 @@ void JanetPoly::test3() {
       {
         Allocator allocator[1];
         List<Wrap*> Q(allocator);
+        Monom m(allocator, s, -1);
         for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j) {
-          Wrap *w=new(allocator) Wrap(allocator, Monom(allocator, j.data()->lm(), per));
+          m.permutation(j.data()->lm(), per);
+          Wrap *w=new(allocator) Wrap(allocator, m);
           Q.push(w);
         }
 
@@ -292,7 +300,7 @@ void JanetPoly::test3() {
 
 
         assert(T.length() == janet.size());
-        std::cout << "Janet = " << T.length() << "  " << std::endl;
+//         std::cout << "Janet = " << T.length() << "  " << std::endl;
 //         for(List<Wrap*>::ConstIterator k(T.begin()); k; ++k)
 //           std::cerr << *k.data() << std::endl;
         sumJanet += T.length();
@@ -306,12 +314,15 @@ void JanetPoly::test3() {
       {
         Allocator allocator[1];
         MCompletion basis(allocator, MCompletion::lex);
-        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
-          basis.push(Monom(allocator, j.data()->lm(), per));
+        Monom m(allocator, s, -1);
+        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j) {
+          m.permutation(j.data()->lm(), per);
+          basis.push(m);
+        }
 
         basis.build();
 
-        std::cerr << "lex = " << basis.T().length() << std::endl;
+//         std::cerr << "lex = " << basis.T().length() << std::endl;
         sumLex += basis.length();
       }
       timerLex.stop();
@@ -323,9 +334,9 @@ void JanetPoly::test3() {
     for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
       allocator->destroy(j.data());
   }
-  std::cerr << "Janet - " << sumJanet << std::endl;
-  std::cerr << timerJanet << std::endl;
-  std::cerr << "Lex - " << sumLex << std::endl;
-  std::cerr << timerLex << std::endl;
+//   std::cerr << "Janet - " << sumJanet << std::endl;
+//   std::cerr << timerJanet << std::endl;
+//   std::cerr << "Lex - " << sumLex << std::endl;
+//   std::cerr << timerLex << std::endl;
 
 }

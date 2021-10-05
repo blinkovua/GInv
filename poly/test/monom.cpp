@@ -25,8 +25,8 @@
 
 using namespace GInv;
 
-class MonomPoly: public CPPUNIT_NS::TestFixture {
-  CPPUNIT_TEST_SUITE(MonomPoly);
+class TestMonom: public CPPUNIT_NS::TestFixture {
+  CPPUNIT_TEST_SUITE(TestMonom);
 //   CPPUNIT_TEST(test1);
 //   CPPUNIT_TEST(test2);
 //   CPPUNIT_TEST(test3);
@@ -41,16 +41,16 @@ public:
   void test3();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(MonomPoly);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestMonom);
 
-void MonomPoly::setUp() {
+void TestMonom::setUp() {
 }
 
-void MonomPoly::tearDown() {
+void TestMonom::tearDown() {
 }
 
 
-void MonomPoly::test1() {
+void TestMonom::test1() {
   Allocator allocator[1];
   Monom u(allocator, 0, 5,-1),
         v(allocator, 1, 5,-1),
@@ -61,7 +61,7 @@ void MonomPoly::test1() {
   CPPUNIT_ASSERT(m.degree() == 6);
 }
 
-void MonomPoly::test2() {
+void TestMonom::test2() {
   Allocator allocator[1];
   const int n=8;
   Monom v[]={
@@ -99,13 +99,14 @@ void MonomPoly::test2() {
   }
 }
 
-void MonomPoly::test3() {
+void TestMonom::test3() {
   Allocator allocator[1];
   const int n=30;
   const int s=5, d1=2, d2=7;
   Monom::rand_init(s, d1, d2);
+  Monom m(allocator, s, -1);
   for(int i=0; i < n; i++) {
-    Monom m(Monom::next(allocator));
+    Monom::rand_next(m);
     CPPUNIT_ASSERT(d1 <= m.degree() && m.degree() <= d2);
 //     std::cerr << m << std::endl;
   }

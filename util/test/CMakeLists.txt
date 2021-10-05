@@ -6,6 +6,7 @@ ADD_EXECUTABLE(unittest
   list.cpp
   rbtree.cpp
   randpermutation.cpp
+  integer.cpp
 )
 
 TARGET_LINK_LIBRARIES(unittest

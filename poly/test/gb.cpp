@@ -253,8 +253,11 @@ void GBPoly::test3() {
   const int s=6, d1=2, d2=7;
   Monom::rand_init(s, d1, d2);
   List<Wrap*> Qtmp(allocator);
-  for(int i=0; i < n; i++)
-    Qtmp.push(new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator))));
+  Monom m(allocator, s, -1);
+  for(int i=0; i < n; i++) {
+    Monom::rand_next(m);
+    Qtmp.push(new(allocator) Wrap(allocator, m));
+  }
 
   for(List<Wrap*>::ConstIterator j(Qtmp.begin()); j; ++j)
     std::cerr << j.data()->lm() << std::endl;

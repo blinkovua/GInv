@@ -29,19 +29,10 @@ ENDIF(UNIX)
 SET(BUILD_TEST TRUE)
 SET(BUILD_FOR_PYTHON TRUE)
 SET(BUILD_GRAPHVIZ TRUE)
-# SET(USE_ALLOCATOR TRUE)
-SET(USE_INTEGER_ALLOCATOR TRUE)
+SET(USE_ALLOCATOR TRUE)
 
 INCLUDE_DIRECTORIES("../")
 LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/../util/")
-
-FIND_LIBRARY(GMP gmp)
-FIND_PATH(GMP_HEADERS gmp.h)
-IF (GMP AND GMP_HEADERS)
-  MESSAGE("-- Looking for gmp - found")
-ELSE (GMP AND GMP_HEADERS )
-  MESSAGE( FATAL_ERROR "-- Looking for gmp - not found")
-ENDIF (GMP AND GMP_HEADERS)
 
 IF(BUILD_DOC)
   INCLUDE(FindDoxygen)
@@ -90,8 +81,6 @@ CONFIGURE_FILE(config.h.in "${PROJECT_SOURCE_DIR}/config.h")
 
 ADD_LIBRARY(ginvpoly STATIC
   config.h
-  integer.cpp
-  integer.h
   monom.cpp
   monom.h
   wrap.cpp
@@ -108,6 +97,5 @@ ADD_LIBRARY(ginvpoly STATIC
 
 TARGET_LINK_LIBRARIES(ginvpoly
   ginvutil
-  gmp
   ${LIB_GRAPHVIZ}
 )

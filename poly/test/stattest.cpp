@@ -60,8 +60,11 @@ int main(int argc, char *argv[]) {
   for(int i=0; i < l; i++) {
     Allocator allocator[1];
     List<Wrap*> Qbase(allocator);
-    for(int i=0; i < n; i++)
-      Qbase.push(new(allocator) Wrap(allocator, Monom(allocator, Monom::next(allocator))));
+    Monom m(allocator, s, -1);
+    for(int i=0; i < n; i++) {
+      Monom::rand_next(m);
+      Qbase.push(new(allocator) Wrap(allocator, m));
+    }
     std::cout << "*****" << std::endl;
 
     int sJanet[p], sGB[p];
@@ -70,8 +73,11 @@ int main(int argc, char *argv[]) {
       {
         Allocator allocator[1];
         List<Wrap*> Qtmp(allocator);
-        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
-          Qtmp.push(new(allocator) Wrap(allocator, Monom(allocator, j.data()->lm(), per)));
+        Monom m(allocator, s, -1);
+        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j) {
+          m.permutation(j.data()->lm(), per);
+          Qtmp.push(new(allocator) Wrap(allocator, m));
+        }
 
         List<Wrap*> Q(allocator);
         addQ(Q, Qtmp, d1, d2);
@@ -119,8 +125,11 @@ int main(int argc, char *argv[]) {
       {
         Allocator allocator[1];
         List<Wrap*> Qtmp(allocator);
-        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j)
-          Qtmp.push(new(allocator) Wrap(allocator, Monom(allocator, j.data()->lm(), per)));
+        Monom m(allocator, s, -1);
+        for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j) {
+          m.permutation(j.data()->lm(), per);
+          Qtmp.push(new(allocator) Wrap(allocator, m));
+        }
 
         List<Wrap*> Q(allocator);
         addQ(Q, Qtmp, d1, d2);

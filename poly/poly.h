@@ -23,8 +23,8 @@
 
 #include "util/allocator.h"
 #include "util/list.h"
+#include "util/integer.h"
 #include "monom.h"
-#include "integer.h"
 #include "janet.h"
 
 #include "config.h"
@@ -33,12 +33,12 @@ namespace GInv {
 
 class Poly {
 public:
-  enum Order {TOP_lex=0x10,
-              TOP_deglex=0x11,
-              TOP_alex=0x12,
-              POT_lex=0x20,
-              POT_deglex=0x21,
-              POT_alex=0x22
+  enum Pos {TOP=0x10,
+            POT=0x20
+  };
+  enum Order {lex=   0x0,
+              deglex=0x1,
+              alex=  0x2
   };
 
 protected:
@@ -51,6 +51,15 @@ protected:
     Term(Allocator* allocator, const Term& a):
         mMonom(allocator, a.mMonom),
         mCoeff(allocator, a.mCoeff) {
+    }
+    Term(Allocator* allocator, int size):
+        mMonom(allocator, size, -1),
+        mCoeff(allocator) {
+      mCoeff.set_ui(1ul);
+    }
+    Term(Allocator* allocator, int size, const char* hex):
+        mMonom(allocator, size, -1),
+        mCoeff(allocator, hex) {
     }
     Term(Allocator* allocator, Monom::Variable v, int size, int pos):
         mMonom(allocator, v, size, pos),
@@ -87,6 +96,8 @@ protected:
   static int POTalex2(const Monom& a, const Monom& b, const Monom& c);
 
   Allocator*   mAllocator;
+  int          mOrder;
+  int          mSize;
   List<Term*>  mHead;
   int (*mCmp1)(const Monom&, const Monom&);
   int (*mCmp2)(const Monom&, const Monom&, const Monom&);
@@ -106,6 +117,7 @@ public:
         mConstIt(i) {}
 
   public:
+    ConstIterator(): mConstIt() {}
     ~ConstIterator() {}
 
     const Integer& coeff() const { return mConstIt.data()->mCoeff; }
@@ -119,35 +131,58 @@ public:
     }
   };
 
+  bool compare(const Poly& a) const {
+    return mSize == a.mSize && mOrder == a.mOrder;
+  }
+
   Poly()=delete;
   Poly(const Poly& a)=delete;
   Poly(Poly&& a):
       mAllocator(a.mAllocator),
-      mHead(a.mAllocator, a.mHead),
+      mOrder(a.mOrder),
+      mSize(a.mSize),
+      mHead(a.mAllocator),
       mCmp1(a.mCmp1),
       mCmp2(a.mCmp2) {
+    a.mAllocator = nullptr;
+    assert(assertValid());
   }
-  Poly(Allocator* allocator, int order):
+  Poly(Allocator* allocator, int order, int size):
       mAllocator(allocator),
+      mOrder(order),
+      mSize(size),
       mHead(allocator) {
+    assert(size > 0);
     setOrder(order);
-  }  
-  Poly(Allocator* allocator, int order, Monom::Variable v, int size, int pos):
+    assert(assertValid());
+  }
+  Poly(Allocator* allocator, int order, int size, const char *integer):
       mAllocator(allocator),
+      mOrder(order),
+      mSize(size),
       mHead(allocator) {
+    assert(size > 0);
     setOrder(order);
-    mHead.push(new(allocator) Term(allocator, v, size, pos));
+    mHead.push(new(allocator) Term(allocator, size, integer));
+    assert(assertValid());
   }
   Poly(Allocator* allocator, int order, const Monom& a):
       mAllocator(allocator),
+      mOrder(order),
+      mSize(a.size()),
       mHead(allocator) {
     setOrder(order);
     mHead.push(new(allocator) Term(allocator, a));
+    assert(assertValid());
   }
   Poly(Allocator* allocator, const Poly& a);
-  ~Poly() { clear(); }
+  ~Poly() {
+    if (mAllocator)
+      clear();
+  }
 
   void swap(Poly& a) {
+    assert(compare(a));
     auto tmp=mAllocator;
     mAllocator = a.mAllocator;
     a.mAllocator = tmp;
@@ -160,6 +195,9 @@ public:
     swap(a);
   }
   void operator=(const Poly &a);
+
+  int order() const { return mOrder; }
+  int size() const { return mSize; }
 
   ConstIterator begin() const { return mHead.begin(); }
   operator bool() const { return mHead; }
@@ -180,8 +218,11 @@ public:
   }
 
   void minus();
+  void add(const char* hex);
   void add(const Poly &a);
+  void sub(const char* hex);
   void sub(const Poly &a);
+  void mult(const char* hex);
   void mult(const Poly &a);
   void pow(int deg);
 
@@ -190,7 +231,7 @@ public:
   void nfTail(Janet &a);
   bool isPp() const;
   void pp();
-  
+
   friend Poly operator-(Poly&& a) {
     Poly r(std::move(a));
     r.minus();

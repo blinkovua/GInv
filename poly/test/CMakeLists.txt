@@ -2,8 +2,8 @@ INCLUDE_DIRECTORIES(../../)
 
 ADD_EXECUTABLE(unittest
   unittest.cpp
-  integer.cpp
   monom.cpp
+  poly.cpp
   janet.cpp
   gb.cpp
   mcompletion.cpp
