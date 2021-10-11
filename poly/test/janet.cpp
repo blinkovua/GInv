@@ -82,6 +82,7 @@ void JanetPoly::test1() {
         Q.push(w);
       }
     }
+//     std::cerr << "AAA" << std::endl;
 
     for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
       CPPUNIT_ASSERT(janet.find(j.data()->lm()) == j.data());

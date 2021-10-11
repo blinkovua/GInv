@@ -41,6 +41,13 @@ void Monom::rand_next(Monom& a) {
   static std::random_device rd;
   static std::mt19937 gen(rd());
   assert(a.mSize == sSize);
+
+  Variable* i=a.mVariables;
+  const Variable* const iend=a.mVariables + a.mSize;
+  do {
+    *i++ = 0;
+  } while(i < iend);
+
   int deg=(*sDis1)(gen);
   a.mDegree = deg;
   do {
@@ -49,6 +56,7 @@ void Monom::rand_next(Monom& a) {
     a.mVariables[var]++;
     --deg;
   } while(deg);
+  assert(a.assertValid());
 }
 
 Monom* Monom::rand_next(Allocator* allocator) {
@@ -70,6 +78,7 @@ Monom::Monom(Allocator* allocator, int size, int pos):
   do {
     *i++ = 0;
   } while(i < iend);
+  assert(assertValid());
 }
 
 Monom::Monom(Allocator* allocator, Variable v, int size, int pos):
@@ -202,6 +211,7 @@ void Monom::operator=(const Monom &a) {
 void Monom::permutation(const Monom &a, RandPermutation &p) {
   assert(mSize == a.size());
   assert(mSize == p.size());
+  mDegree = a.mDegree;
   for(int v=0; v < mSize; v++)
     mVariables[v] = a.mVariables[p[v]];
   assert(assertValid());

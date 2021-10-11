@@ -174,6 +174,22 @@ Poly::Poly(Allocator* allocator, const Poly& a):
   assert(assertValid());
 }
 
+void Poly::swap(Poly& a) {//TODO
+  assert(compare(a));
+  auto tmp=mAllocator;
+  mAllocator = a.mAllocator;
+  a.mAllocator = tmp;
+
+  mHead.swap(a.mHead);
+}
+
+void Poly::operator=(Poly &&a) {//TODO
+  assert(this != &a);
+  clear();
+  swap(a);
+}
+
+
 void Poly::operator=(const Poly &a) {
   assert(this != &a);
   clear();
@@ -237,7 +253,7 @@ void Poly::add(const char* hex) {
 }
 
 void Poly::add(const Poly &a) {
-  assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
+  assert(compare(a));
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
   while(i && ia)
@@ -295,7 +311,7 @@ void Poly::sub(const char* hex) {
 }
 
 void Poly::sub(const Poly &a) {
-  assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
+  assert(compare(a));
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
   while(i && ia)
@@ -333,23 +349,22 @@ void Poly::mult(const char* hex) {
   if (mHead.length() == 0)
     ;
   else {
-    List<Term*> tmp(mAllocator);
-    List<Term*>::Iterator j(tmp.begin());
     Integer c(mAllocator, hex);
-    List<Term*>::ConstIterator i(mHead.begin());
-    while(i) {
-      j.insert(new(mAllocator) Term(mAllocator, *i.data()));
-      j.data()->mCoeff.mult(i.data()->mCoeff, c);
-      ++i;
-      ++j;
+    if (c.isZero())
+      clear();
+    else {
+      List<Term*>::ConstIterator i(mHead.begin());
+      while(i) {
+        i.data()->mCoeff.mult(c);
+        ++i;
+      }
     }
-    mHead.swap(tmp);
   }
   assert(assertValid());
 }
 
 void Poly::mult(const Poly &a) {
-  assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
+  assert(compare(a));
   if (mHead.length() == 0)
     ;
   else if (a.mHead.length() == 0)
@@ -415,15 +430,12 @@ void Poly::mult(const Poly &a) {
           ++k;
           break;
         default:
-          Integer tmp(mAllocator);
-          tmp.add(k.data()->mCoeff, j.data()->mCoeff);
-          if (tmp.isZero()) {
+          k.data()->mCoeff.add(j.data()->mCoeff);
+          if (!k.data()->mCoeff.isZero())
+            ++k;
+          else {
             mAllocator->destroy(k.data());
             k.del();
-          }
-          else {
-            k.data()->mCoeff.swap(tmp);
-            ++k;
           }
           mAllocator->destroy(j.data());
           j.del();
@@ -473,8 +485,7 @@ void Poly::reduction(const Poly& a) {
   while(i && ia) {
     switch(mCmp2(i.data()->mMonom, ia.data()->mMonom, m2)) {
     case 1:
-      tmp1.mult(i.data()->mCoeff, k1);
-      i.data()->mCoeff.swap(tmp1);
+      i.data()->mCoeff.mult(k1);
       ++i;
       break;
     case -1:
@@ -497,8 +508,7 @@ void Poly::reduction(const Poly& a) {
     }
   }
   while(i) {
-    tmp1.mult(i.data()->mCoeff, k1);
-    i.data()->mCoeff.swap(tmp1);
+    i.data()->mCoeff.mult(k1);
     ++i;
   }
   while(ia) {
@@ -523,8 +533,7 @@ void Poly::redTail(List<Term*>::Iterator i1, const Poly& a) {
   List<Term*>::Iterator i(mHead.begin());
   while(i != i1) {
     assert(i);
-    tmp1.mult(i.data()->mCoeff, k1);
-    i.data()->mCoeff.swap(tmp1);
+    i.data()->mCoeff.mult(k1);
     ++i;
   }
 
@@ -535,8 +544,7 @@ void Poly::redTail(List<Term*>::Iterator i1, const Poly& a) {
   while(i && ia) {
     switch(mCmp2(i.data()->mMonom, ia.data()->mMonom, m2)) {
     case 1:
-      tmp1.mult(i.data()->mCoeff, k1);
-      i.data()->mCoeff.swap(tmp1);
+      i.data()->mCoeff.mult(k1);
       ++i;
       break;
     case -1:
@@ -559,8 +567,7 @@ void Poly::redTail(List<Term*>::Iterator i1, const Poly& a) {
     }
   }
   while(i) {
-    tmp1.mult(i.data()->mCoeff, k1);
-    i.data()->mCoeff.swap(tmp1);
+    i.data()->mCoeff.mult(k1);
     ++i;
   }
   while(ia) {

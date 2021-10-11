@@ -181,19 +181,8 @@ public:
       clear();
   }
 
-  void swap(Poly& a) {
-    assert(compare(a));
-    auto tmp=mAllocator;
-    mAllocator = a.mAllocator;
-    a.mAllocator = tmp;
-
-    mHead.swap(a.mHead);
-  }
-  void operator=(Poly &&a) {
-    assert(this != &a);
-    clear();
-    swap(a);
-  }
+  void swap(Poly& a);
+  void operator=(Poly &&a);
   void operator=(const Poly &a);
 
   int order() const { return mOrder; }
