@@ -21,7 +21,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/config/SourcePrefix.h>
 
-#include "poly/monom.h"
+#include "ginv/monom.h"
 
 using namespace GInv;
 

@@ -18,20 +18,19 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_POLY_H
-#define GINV_POLY_POLY_H
+#ifndef GINV_POLY_POLY_INT_H
+#define GINV_POLY_POLY_INT_H
 
 #include "util/allocator.h"
 #include "util/list.h"
 #include "util/integer.h"
 #include "monom.h"
-#include "janet.h"
 
 #include "config.h"
 
 namespace GInv {
 
-class Poly {
+class PolyInt {
 public:
   enum Pos {TOP=0x10,
             POT=0x20
@@ -50,6 +49,10 @@ protected:
     Term(const Term& a)=delete;
     Term(Allocator* allocator, const Term& a):
         mMonom(allocator, a.mMonom),
+        mCoeff(allocator, a.mCoeff) {
+    }
+    Term(Allocator* allocator, Monom::Variable v, const Term& a):
+        mMonom(allocator, v, a.mMonom),
         mCoeff(allocator, a.mCoeff) {
     }
     Term(Allocator* allocator, int size):
@@ -105,11 +108,11 @@ protected:
   void setOrder(int order);
   void clear();
 
-  void redTail(List<Term*>::Iterator i1, const Poly& a);
+  void redTail(List<Term*>::Iterator i1, const PolyInt& a);
 
 public:
   class ConstIterator {
-    friend class Poly;
+    friend class PolyInt;
 
     List<Term*>::ConstIterator mConstIt;
 
@@ -131,13 +134,13 @@ public:
     }
   };
 
-  bool compare(const Poly& a) const {
+  bool compare(const PolyInt& a) const {
     return mSize == a.mSize && mOrder == a.mOrder;
   }
 
-  Poly()=delete;
-  Poly(const Poly& a)=delete;
-  Poly(Poly&& a):
+  PolyInt()=delete;
+  PolyInt(const PolyInt& a)=delete;
+  PolyInt(PolyInt&& a):
       mAllocator(a.mAllocator),
       mOrder(a.mOrder),
       mSize(a.mSize),
@@ -147,7 +150,7 @@ public:
     a.mAllocator = nullptr;
     assert(assertValid());
   }
-  Poly(Allocator* allocator, int order, int size):
+  PolyInt(Allocator* allocator, int order, int size):
       mAllocator(allocator),
       mOrder(order),
       mSize(size),
@@ -156,7 +159,7 @@ public:
     setOrder(order);
     assert(assertValid());
   }
-  Poly(Allocator* allocator, int order, int size, const char *integer):
+  PolyInt(Allocator* allocator, int order, int size, const char *integer):
       mAllocator(allocator),
       mOrder(order),
       mSize(size),
@@ -166,7 +169,7 @@ public:
     mHead.push(new(allocator) Term(allocator, size, integer));
     assert(assertValid());
   }
-  Poly(Allocator* allocator, int order, const Monom& a):
+  PolyInt(Allocator* allocator, int order, const Monom& a):
       mAllocator(allocator),
       mOrder(order),
       mSize(a.size()),
@@ -175,15 +178,16 @@ public:
     mHead.push(new(allocator) Term(allocator, a));
     assert(assertValid());
   }
-  Poly(Allocator* allocator, const Poly& a);
-  ~Poly() {
+  PolyInt(Allocator* allocator, Monom::Variable v, const PolyInt& a);
+  PolyInt(Allocator* allocator, const PolyInt& a);
+  ~PolyInt() {
     if (mAllocator)
       clear();
   }
 
-  void swap(Poly& a);
-  void operator=(Poly &&a);
-  void operator=(const Poly &a);
+  void swap(PolyInt& a);
+  void operator=(PolyInt &&a);
+  void operator=(const PolyInt &a);
 
   int order() const { return mOrder; }
   int size() const { return mSize; }
@@ -208,52 +212,71 @@ public:
 
   void minus();
   void add(const char* hex);
-  void add(const Poly &a);
+  void add(const PolyInt &a);
   void sub(const char* hex);
-  void sub(const Poly &a);
+  void sub(const PolyInt &a);
   void mult(const char* hex);
-  void mult(const Poly &a);
+  void mult(const PolyInt &a);
   void pow(int deg);
 
-  void reduction(const Poly& a);
-  void nf(Janet &a);
-  void nfTail(Janet &a);
+  void reduction(const PolyInt& a);
   bool isPp() const;
   void pp();
 
-  friend Poly operator-(Poly&& a) {
-    Poly r(std::move(a));
+//   template <typename T>
+//   int nf(T &a) {
+//     int r=0;
+//     if (!isZero()) {
+//       Wrap* wrap = a.find(lm());
+//       while(wrap) {
+//         reduction(wrap->poly());
+//         ++r;
+//         if (isZero())
+//           break;
+//         wrap = a.find(poly.lm());
+//       }
+//     }
+//     return r;
+//   }
+//   template <typename T>
+//   void nfTail(T &a) {
+//
+//   }
+
+  friend PolyInt operator-(PolyInt&& a) {
+    PolyInt r(std::move(a));
     r.minus();
     return r;
   }
-  friend Poly operator+(Poly&& a, const Poly& b) {
-    Poly r(std::move(a));
+  friend PolyInt operator+(PolyInt&& a, const PolyInt& b) {
+    PolyInt r(std::move(a));
     r.add(b);
     return r;
   }
-  friend Poly operator-(Poly&& a, const Poly& b) {
-    Poly r(std::move(a));
+  friend PolyInt operator-(PolyInt&& a, const PolyInt& b) {
+    PolyInt r(std::move(a));
     r.sub(b);
     return r;
   }
-  friend Poly operator*(Poly&& a, const Poly& b) {
-    Poly r(std::move(a));
+  friend PolyInt operator*(PolyInt&& a, const PolyInt& b) {
+    PolyInt r(std::move(a));
     r.mult(b);
     return r;
   }
-  Poly pow(Poly&& a, int deg) {
-    Poly r(std::move(a));
+  PolyInt pow(PolyInt&& a, int deg) {
+    PolyInt r(std::move(a));
     r.pow(deg);
     return r;
   }
 
 
-  friend std::ostream& operator<<(std::ostream& out, const Poly &a);
+  friend std::ostream& operator<<(std::ostream& out, const PolyInt &a);
 
   bool assertValid() const;
 };
 
+typedef GC<PolyInt> PolyIntGC;
 
 }
 
-#endif // GINV_POLY_POLY_H
+#endif // GINV_POLY_POLY_INT_H

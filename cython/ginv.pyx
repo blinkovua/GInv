@@ -342,22 +342,22 @@ cdef class monom(const_monom):
     return self
 
 #ctypedef int Order
-cdef extern from "poly.h" namespace "GInv":
-  cdef cppclass PolyConstIterator "GInv::Poly::ConstIterator":
+cdef extern from "poly_int.h" namespace "GInv":
+  cdef cppclass PolyIntConstIterator "GInv::PolyInt::ConstIterator":
     const Integer& coeff() const
     const Monom& monom() const
     bool isNext "operator bool"() const
     void next "operator++"()
 
-  cdef cppclass Poly:
-    bool compare(const Poly& a) const
+  cdef cppclass PolyInt:
+    bool compare(const PolyInt& a) const
 
-    Poly(Poly&& a)
-    Poly(Allocator* allocator, int order)
-    Poly(Allocator* allocator, int k, const Monom& a)
-    Poly(Allocator* allocator, const Poly& a)
+    PolyInt(PolyInt&& a)
+    PolyInt(Allocator* allocator, int order)
+    PolyInt(Allocator* allocator, int k, const Monom& a)
+    PolyInt(Allocator* allocator, const PolyInt& a)
 
-    PolyConstIterator begin() const
+    PolyIntConstIterator begin() const
     bool isZero() const
     int length() const
     int degree() const
@@ -367,21 +367,21 @@ cdef extern from "poly.h" namespace "GInv":
 
     void minus()
     void addI "add"(const char *hex)
-    void add(const Poly &a)
+    void add(const PolyInt &a)
     void subI "sub"(const char *hex)
-    void sub(const Poly &a)
+    void sub(const PolyInt &a)
     void multI "mult"(const char *hex)
-    void mult(const Poly &a)
+    void mult(const PolyInt &a)
     void pow(int deg)
 
-    void reduction(const Poly& a)
+    void reduction(const PolyInt& a)
     #void nf(Janet &a)
     #void nfTail(Janet &a)
     bool isPp() const
     void pp()
 
-cdef class const_poly:
-  cdef const Poly *ptr
+cdef class const_poly_int:
+  cdef const PolyInt *ptr
   def __cinit__(self, ):
     self.ptr = NULL
 
@@ -393,7 +393,7 @@ cdef class const_poly:
     return self.ptr.length()
   def __iter__(self):
     assert self.ptr
-    cdef PolyConstIterator i
+    cdef PolyIntConstIterator i
     i = self.ptr.begin()
     while i.isNext():
       m, c = const_monom(), const_integer()
@@ -438,61 +438,65 @@ cdef class const_poly:
 
   def __neg__(self):
     assert self.ptr
-    r = poly()
-    r.ptr = new Poly(r.allocator, self.ptr[0])
-    (<Poly*>r.ptr).minus()
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
+    (<PolyInt*>r.ptr).minus()
     return r
 
-  def __add__(const_poly self, other):
+  def __add__(const_poly_int self, other):
     assert self.ptr
-    r = poly()
-    r.ptr = new Poly(r.allocator, self.ptr[0])
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
     if isinstance(other, int):
       assert self
-      (<Poly*>r.ptr).addI(hex(other).encode("utf-8"))
-    elif isinstance(other, const_poly):
-      assert (<const_poly>other).ptr and self.ptr.compare((<const_poly>other).ptr[0])
-      (<Poly*>r.ptr).add((<const_poly>other).ptr[0])
+      (<PolyInt*>r.ptr).addI(hex(other).encode("utf-8"))
+    elif isinstance(other, const_poly_int):
+      assert (<const_poly_int>other).ptr and self.ptr.compare((<const_poly_int>other).ptr[0])
+      (<PolyInt*>r.ptr).add((<const_poly_int>other).ptr[0])
     else:
       return NotImplemented
     return r
 
-  def __sub__(const_poly self, other):
+  def __sub__(const_poly_int self, other):
     assert self.ptr
-    r = poly()
-    r.ptr = new Poly(r.allocator, self.ptr[0])
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
     if isinstance(other, int):
       assert self
-      (<Poly*>r.ptr).subI(hex(other).encode("utf-8"))
-    elif isinstance(other, const_poly):
-      assert (<const_poly>other).ptr and self.ptr.compare((<const_poly>other).ptr[0])
-      (<Poly*>r.ptr).sub((<const_poly>other).ptr[0])
+      (<PolyInt*>r.ptr).subI(hex(other).encode("utf-8"))
+    elif isinstance(other, const_poly_int):
+      assert (<const_poly_int>other).ptr and self.ptr.compare((<const_poly_int>other).ptr[0])
+      (<PolyInt*>r.ptr).sub((<const_poly_int>other).ptr[0])
     else:
       return NotImplemented
     return r
 
-  def __mul__(const_poly self, other):
+  def __mul__(const_poly_int self, other):
     assert self.ptr
-    r = poly()
-    r.ptr = new Poly(r.allocator, self.ptr[0])
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
     if isinstance(other, int):
       assert self
-      (<Poly*>r.ptr).multI(hex(other).encode("utf-8"))
-    elif isinstance(other, const_poly):
-      assert (<const_poly>other).ptr and self.ptr.compare((<const_poly>other).ptr[0])
-      (<Poly*>r.ptr).mult((<const_poly>other).ptr[0])
+      (<PolyInt*>r.ptr).multI(hex(other).encode("utf-8"))
+    elif isinstance(other, const_poly_int):
+      assert (<const_poly_int>other).ptr and self.ptr.compare((<const_poly_int>other).ptr[0])
+      (<PolyInt*>r.ptr).mult((<const_poly_int>other).ptr[0])
     else:
       return NotImplemented
     return r
 
-  def __pow__(poly self, int other, modulo):
+  def __pow__(const_poly_int self, int other, modulo):
     assert other >= 0
-    r = poly()
-    r.ptr = new Poly(r.allocator, self.ptr[0])
-    (<Poly *>r.ptr).pow(other)
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
+    (<PolyInt *>r.ptr).pow(other)
     return r
 
-cdef class poly(const_poly):
+  def isPp(const_poly_int self):
+    assert self.ptr
+    return self.ptr.isPp()
+
+cdef class poly_int(const_poly_int):
   cdef Allocator allocator[1]
   def __dealloc__(self):
     del self.ptr
@@ -513,9 +517,22 @@ cdef class poly(const_poly):
       k += 1
     else:
       k += 2
-    r = poly()
-    r.ptr = new Poly(r.allocator, k, a.ptr[0])
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, k, a.ptr[0])
     return r
+
+  def reduction(poly_int self, const_poly_int other):
+    assert self.ptr and other.ptr
+    assert len(self) and len(other)
+    assert self.ptr.lm().divisiable(other.ptr.lm())
+    (<PolyInt *>self.ptr).reduction(other.ptr[0])
+    return self
+
+  def pp(poly_int self):
+    assert self.ptr
+    assert not self.ptr.isPp()
+    (<PolyInt *>self.ptr).pp()
+    return self
 
 #cdef class wrap:
   #cdef const Wrap *ptr

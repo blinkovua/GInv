@@ -21,7 +21,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/config/SourcePrefix.h>
 
-#include "poly/gb.h"
+#include "ginv/gb.h"
 
 using namespace GInv;
 

@@ -165,6 +165,8 @@ public:
 #endif // GINV_POLY_GRAPHVIZ
 };
 
+typedef GC<Janet> JanetGC;
+
 }
 
 #endif // GINV_POLY_JANET_H

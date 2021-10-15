@@ -21,12 +21,12 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/config/SourcePrefix.h>
 
-#include "poly/poly.h"
+#include "ginv/poly_int.h"
 
 using namespace GInv;
 
-class TestPoly: public CPPUNIT_NS::TestFixture {
-  CPPUNIT_TEST_SUITE(TestPoly);
+class TestPolyInt: public CPPUNIT_NS::TestFixture {
+  CPPUNIT_TEST_SUITE(TestPolyInt);
   CPPUNIT_TEST(test1);
 //   CPPUNIT_TEST(test2);
 //   CPPUNIT_TEST(test3);
@@ -39,16 +39,16 @@ public:
   void test1();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(TestPoly);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestPolyInt);
 
-void TestPoly::setUp() {
+void TestPolyInt::setUp() {
 }
 
-void TestPoly::tearDown() {
+void TestPolyInt::tearDown() {
 }
 
 
-void TestPoly::test1() {
+void TestPolyInt::test1() {
   Allocator allocator[1];
   const int n=8;
   Monom v[]={
@@ -61,19 +61,19 @@ void TestPoly::test1() {
     {allocator, 6, n, -1},
     {allocator, 7, n, -1},
   };
-  Poly p[]={
-    {allocator, Poly::TOP | Poly::lex, v[0]},
-    {allocator, Poly::TOP | Poly::lex, v[1]},
-    {allocator, Poly::TOP | Poly::lex, v[2]},
-    {allocator, Poly::TOP | Poly::lex, v[3]},
-    {allocator, Poly::TOP | Poly::lex, v[4]},
-    {allocator, Poly::TOP | Poly::lex, v[5]},
-    {allocator, Poly::TOP | Poly::lex, v[6]},
-    {allocator, Poly::TOP | Poly::lex, v[7]},
+  PolyInt p[]={
+    {allocator, PolyInt::TOP | PolyInt::lex, v[0]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[1]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[2]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[3]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[4]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[5]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[6]},
+    {allocator, PolyInt::TOP | PolyInt::lex, v[7]},
   };
 
   CPPUNIT_ASSERT(p[0].length() == 1);
-//   Poly sum(allocator, u + v + z);
+//   PolyInt sum(allocator, u + v + z);
   p[5].add(p[0]);
 //   z.mult(v);
 //   z.add(v);

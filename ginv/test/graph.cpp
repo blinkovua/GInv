@@ -25,7 +25,7 @@
 #include <graphviz/gvc.h>
 
 #include "util/list.h"
-#include "poly/janet.h"
+#include "ginv/janet.h"
 
 using namespace GInv;
 

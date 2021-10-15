@@ -3,14 +3,14 @@ INCLUDE_DIRECTORIES(../../)
 ADD_EXECUTABLE(unittest
   unittest.cpp
   monom.cpp
-  poly.cpp
+  poly_int.cpp
   janet.cpp
   gb.cpp
   mcompletion.cpp
 )
 
 TARGET_LINK_LIBRARIES(unittest
-  ginvpoly
+  ginv
   ginvutil
   gmp
   cppunit
@@ -21,7 +21,7 @@ IF(BUILD_GRAPHVIZ)
     graph.cpp
   )
   TARGET_LINK_LIBRARIES(graphtest
-    ginvpoly
+    ginv
     ginvutil
   )
 ENDIF(BUILD_GRAPHVIZ)
@@ -31,6 +31,6 @@ ADD_EXECUTABLE(stattest
 )
 
 TARGET_LINK_LIBRARIES(stattest
-  ginvpoly
+  ginv
   ginvutil
 )

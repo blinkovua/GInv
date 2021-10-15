@@ -21,7 +21,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/config/SourcePrefix.h>
 
-#include "poly/mcompletion.h"
+#include "ginv/mcompletion.h"
 
 using namespace GInv;
 

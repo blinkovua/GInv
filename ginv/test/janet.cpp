@@ -25,8 +25,8 @@
 #include "util/list.h"
 #include "util/randpermutation.h"
 
-#include "poly/janet.h"
-#include "poly/mcompletion.h"
+#include "ginv/janet.h"
+#include "ginv/mcompletion.h"
 
 using namespace GInv;
 

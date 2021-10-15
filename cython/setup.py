@@ -6,18 +6,18 @@ extensions = [
     Extension("*", ["*.pyx"],
         include_dirs = [
           "../../util/",
-          "../../poly/",
+          "../../ginv/",
           "../../",
         ],
         libraries = [
-          "ginvpoly",
+          "ginv",
           "ginvutil",
           "gmp",
           "cgraph",
           "gvc",
         ],
         library_dirs = [
-          "../poly/",
+          "../ginv/",
           "../util/",
         ]
     )

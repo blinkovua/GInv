@@ -18,53 +18,53 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "poly.h"
+#include "poly_int.h"
 
 namespace GInv {
 
-int Poly::TOPlex(const Monom& a, const Monom& b) {
+int PolyInt::TOPlex(const Monom& a, const Monom& b) {
   int r=a.lex(b);
   if (r == 0 && a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
   return r;
 }
 
-int Poly::TOPdeglex(const Monom& a, const Monom& b) {
+int PolyInt::TOPdeglex(const Monom& a, const Monom& b) {
   int r=a.deglex(b);
   if (r == 0 && a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
   return r;
 }
 
-int Poly::TOPalex(const Monom& a, const Monom& b) {
+int PolyInt::TOPalex(const Monom& a, const Monom& b) {
   int r=a.alex(b);
   if (r == 0 && a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
   return r;
 }
 
-int Poly::TOPlex2(const Monom& a, const Monom& b, const Monom& c) {
+int PolyInt::TOPlex2(const Monom& a, const Monom& b, const Monom& c) {
   int r=a.lex(b, c);
   if (r == 0 && a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
   return r;
 }
 
-int Poly::TOPdeglex2(const Monom& a, const Monom& b, const Monom& c) {
+int PolyInt::TOPdeglex2(const Monom& a, const Monom& b, const Monom& c) {
   int r=a.deglex(b, c);
   if (r == 0 && a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
   return r;
 }
 
-int Poly::TOPalex2(const Monom& a, const Monom& b, const Monom& c) {
+int PolyInt::TOPalex2(const Monom& a, const Monom& b, const Monom& c) {
   int r=a.alex(b, c);
   if (r == 0 && a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
   return r;
 }
 
-int Poly::POTlex(const Monom& a, const Monom& b) {
+int PolyInt::POTlex(const Monom& a, const Monom& b) {
   int r;
   if (a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
@@ -73,7 +73,7 @@ int Poly::POTlex(const Monom& a, const Monom& b) {
   return r;
 }
 
-int Poly::POTdeglex(const Monom& a, const Monom& b) {
+int PolyInt::POTdeglex(const Monom& a, const Monom& b) {
   int r;
   if (a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
@@ -82,7 +82,7 @@ int Poly::POTdeglex(const Monom& a, const Monom& b) {
   return r;
 }
 
-int Poly::POTalex(const Monom& a, const Monom& b) {
+int PolyInt::POTalex(const Monom& a, const Monom& b) {
   int r;
   if (a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
@@ -91,7 +91,7 @@ int Poly::POTalex(const Monom& a, const Monom& b) {
   return r;
 }
 
-int Poly::POTlex2(const Monom& a, const Monom& b, const Monom& c) {
+int PolyInt::POTlex2(const Monom& a, const Monom& b, const Monom& c) {
   int r;
   if (a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
@@ -100,7 +100,7 @@ int Poly::POTlex2(const Monom& a, const Monom& b, const Monom& c) {
   return r;
 }
 
-int Poly::POTdeglex2(const Monom& a, const Monom& b, const Monom& c) {
+int PolyInt::POTdeglex2(const Monom& a, const Monom& b, const Monom& c) {
   int r;
   if (a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
@@ -109,7 +109,7 @@ int Poly::POTdeglex2(const Monom& a, const Monom& b, const Monom& c) {
   return r;
 }
 
-int Poly::POTalex2(const Monom& a, const Monom& b, const Monom& c) {
+int PolyInt::POTalex2(const Monom& a, const Monom& b, const Monom& c) {
   int r;
   if (a.pos() != b.pos())
     r = (a.pos() > b.pos()) ? 1: -1;
@@ -118,7 +118,7 @@ int Poly::POTalex2(const Monom& a, const Monom& b, const Monom& c) {
   return r;
 }
 
-void Poly::setOrder(int order) {
+void PolyInt::setOrder(int order) {
   switch(order) {
     case TOP | lex:
       mCmp1 = TOPlex;
@@ -149,7 +149,7 @@ void Poly::setOrder(int order) {
   }
 }
 
-void Poly::clear() {
+void PolyInt::clear() {
   List<Term*>::Iterator i(mHead.begin());
   while(i) {
     mAllocator->destroy(i.data());
@@ -157,7 +157,24 @@ void Poly::clear() {
   }
 }
 
-Poly::Poly(Allocator* allocator, const Poly& a):
+PolyInt::PolyInt(Allocator* allocator, Monom::Variable v, const PolyInt& a):
+      mAllocator(allocator),
+      mOrder(a.mOrder),
+      mSize(a.mSize),
+      mHead(allocator),
+      mCmp1(a.mCmp1),
+      mCmp2(a.mCmp2) {
+  List<Term*>::ConstIterator ia(a.mHead.begin());
+  List<Term*>::Iterator i(mHead.begin());
+  while(ia) {
+    i.insert(new(mAllocator) Term(mAllocator, v, *ia.data()));
+    ++ia;
+    ++i;
+  }
+  assert(assertValid());
+}
+
+PolyInt::PolyInt(Allocator* allocator, const PolyInt& a):
       mAllocator(allocator),
       mOrder(a.mOrder),
       mSize(a.mSize),
@@ -174,7 +191,7 @@ Poly::Poly(Allocator* allocator, const Poly& a):
   assert(assertValid());
 }
 
-void Poly::swap(Poly& a) {//TODO
+void PolyInt::swap(PolyInt& a) {//TODO
   assert(compare(a));
   auto tmp=mAllocator;
   mAllocator = a.mAllocator;
@@ -183,14 +200,14 @@ void Poly::swap(Poly& a) {//TODO
   mHead.swap(a.mHead);
 }
 
-void Poly::operator=(Poly &&a) {//TODO
+void PolyInt::operator=(PolyInt &&a) {//TODO
   assert(this != &a);
   clear();
   swap(a);
 }
 
 
-void Poly::operator=(const Poly &a) {
+void PolyInt::operator=(const PolyInt &a) {
   assert(this != &a);
   clear();
 
@@ -209,7 +226,7 @@ void Poly::operator=(const Poly &a) {
   assert(assertValid());
 }
 
-int Poly::norm() const {
+int PolyInt::norm() const {
   int sum=0;
   List<Term*>::ConstIterator i(mHead.begin());
   while(i) {
@@ -220,7 +237,7 @@ int Poly::norm() const {
 }
 
 
-void Poly::minus() {
+void PolyInt::minus() {
   List<Term*>::ConstIterator i(mHead.begin());
   while(i) {
     i.data()->mCoeff.set_neg();
@@ -229,7 +246,7 @@ void Poly::minus() {
   assert(assertValid());
 }
 
-void Poly::add(const char* hex) {
+void PolyInt::add(const char* hex) {
   assert(mHead);
   List<Term*>::Iterator i(mHead.begin());
   assert(i);
@@ -252,7 +269,7 @@ void Poly::add(const char* hex) {
   assert(assertValid());
 }
 
-void Poly::add(const Poly &a) {
+void PolyInt::add(const PolyInt &a) {
   assert(compare(a));
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
@@ -285,7 +302,7 @@ void Poly::add(const Poly &a) {
   assert(assertValid());
 }
 
-void Poly::sub(const char* hex) {
+void PolyInt::sub(const char* hex) {
   assert(mHead);
   List<Term*>::Iterator i(mHead.begin());
   assert(i);
@@ -310,7 +327,7 @@ void Poly::sub(const char* hex) {
   assert(assertValid());
 }
 
-void Poly::sub(const Poly &a) {
+void PolyInt::sub(const PolyInt &a) {
   assert(compare(a));
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
@@ -345,7 +362,7 @@ void Poly::sub(const Poly &a) {
   assert(assertValid());
 }
 
-void Poly::mult(const char* hex) {
+void PolyInt::mult(const char* hex) {
   if (mHead.length() == 0)
     ;
   else {
@@ -363,7 +380,7 @@ void Poly::mult(const char* hex) {
   assert(assertValid());
 }
 
-void Poly::mult(const Poly &a) {
+void PolyInt::mult(const PolyInt &a) {
   assert(compare(a));
   if (mHead.length() == 0)
     ;
@@ -451,7 +468,7 @@ void Poly::mult(const Poly &a) {
   assert(assertValid());
 }
 
-void Poly::pow(int deg) {
+void PolyInt::pow(int deg) {
   assert(deg >= 0);
   if (deg == 1)
     ;
@@ -459,18 +476,20 @@ void Poly::pow(int deg) {
     clear();
   else {
     assert(deg > 1);
-    Poly tmp(mAllocator, *this);
+    PolyInt tmp(mAllocator, *this);
     for(--deg; deg > 0; deg--)
       tmp.mult(*this);
     swap(tmp);
   }
 }
 
-void Poly::reduction(const Poly& a) {
+void PolyInt::reduction(const PolyInt& a) {
   assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
   assert(lm().divisiable(a.lm()));
 
-  Monom m2(mAllocator, lm(), a.lm(), true);
+  Monom m2(mAllocator, lm());
+  m2.div(a.lm());
+
   Integer tmp1(mAllocator), tmp2(mAllocator), k1(mAllocator), k2(mAllocator);
   tmp1.gcd(lc(), a.lc());
   k1.div(a.lc(), tmp1);
@@ -512,18 +531,20 @@ void Poly::reduction(const Poly& a) {
     ++i;
   }
   while(ia) {
-      i.insert(new(mAllocator) Term(mAllocator, ia.data()->mMonom, m2));
-      i.data()->mCoeff.mult(ia.data()->mCoeff, k2);
-      ++i;
-      ++ia;
+    i.insert(new(mAllocator) Term(mAllocator, ia.data()->mMonom, m2));
+    i.data()->mCoeff.mult(ia.data()->mCoeff, k2);
+    ++i;
+    ++ia;
   }
 }
 
-void Poly::redTail(List<Term*>::Iterator i1, const Poly& a) {
+void PolyInt::redTail(List<Term*>::Iterator i1, const PolyInt& a) {
   assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
   assert(i1.data()->mMonom.divisiable(a.lm()));
 
-  Monom m2(mAllocator, i1.data()->mMonom, a.lm(), true);
+  Monom m2(mAllocator, lm());
+  m2.div(a.lm());
+
   Integer tmp1(mAllocator), tmp2(mAllocator), k1(mAllocator), k2(mAllocator);
   tmp1.gcd(i1.data()->mCoeff, a.lc());
   k1.div(a.lc(), tmp1);
@@ -578,14 +599,55 @@ void Poly::redTail(List<Term*>::Iterator i1, const Poly& a) {
   }
 }
 
-// void Poly::nf(Janet &a);
-// void Poly::nfTail(Janet &a);
-// bool Poly::isPp() const;
-// void Poly::pp();
-//
+// void PolyInt::nf(Janet &a);
+// void PolyInt::nfTail(Janet &a);
 
-std::ostream& operator<<(std::ostream& out, const Poly &a) {
-  Poly::ConstIterator i(a.begin());
+bool PolyInt::isPp() const {
+  if (!mHead)
+    return true;
+  else {
+    List<Term*>::ConstIterator i(mHead.begin());
+    if (i.data()->mCoeff.isAbsOne())
+      return true;
+    Integer g(mAllocator, i.data()->mCoeff);
+    ++i;
+    while(i) {
+      g.gcd(i.data()->mCoeff);
+      if (g.isAbsOne())
+        return true;
+      ++i;
+    }
+    return false;
+  }
+}
+
+
+void PolyInt::pp() {
+  assert(!isPp());
+  if (mHead) {
+    List<Term*>::ConstIterator i(mHead.begin());
+    if (i.data()->mCoeff.isAbsOne())
+      return;
+    Integer g(mAllocator, i.data()->mCoeff);
+    ++i;
+    while(i) {
+      g.gcd(i.data()->mCoeff);
+      if (g.isAbsOne())
+        return;
+      ++i;
+    }
+
+    i = mHead.begin();
+    while(i) {
+      i.data()->mCoeff.div(g);
+      ++i;
+    }
+  }
+}
+
+
+std::ostream& operator<<(std::ostream& out, const PolyInt &a) {
+  PolyInt::ConstIterator i(a.begin());
   if (!i)
     out << '0';
   else {
@@ -602,7 +664,7 @@ std::ostream& operator<<(std::ostream& out, const Poly &a) {
 
 
 
-bool Poly::assertValid() const {
+bool PolyInt::assertValid() const {
   if (mHead) {
     List<Term*>::ConstIterator i(mHead.begin());
     if (i.data()->mCoeff.isZero())
