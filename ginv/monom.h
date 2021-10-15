@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_MONOM_H
-#define GINV_POLY_MONOM_H
+#ifndef GINV_MONOM_H
+#define GINV_MONOM_H
 
 #include <utility>
 #include <random>
@@ -140,4 +140,4 @@ typedef GC<Monom> MonomGC;
 
 }
 
-#endif // GINV_POLY_MONOM_H
+#endif // GINV_MONOM_H

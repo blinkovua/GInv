@@ -86,7 +86,7 @@ bool Janet::ConstIterator::assertValid() {
     return wrap() != nullptr;
 }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
 Agnode_t* Janet::draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd) {
   std::stringstream ss;
   Agnode_t* r=nullptr;
@@ -164,7 +164,7 @@ Agnode_t* Janet::draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd) {
 //   assert(r);
   return r;
 }
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
 void Janet::setMNprec(Wrap *wrap, int v, ConstIterator j) {
   assert(j);

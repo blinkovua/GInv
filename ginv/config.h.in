@@ -1,8 +1,8 @@
-#ifndef GINV_POLY_CONFIG_H
-#define GINV_POLY_CONFIG_H
+#ifndef GINV_CONFIG_H
+#define GINV_CONFIG_H
 
-#cmakedefine GINV_POLY_WIN32
-#cmakedefine GINV_POLY_GRAPHVIZ
-#cmakedefine GINV_POLY_ALLOCATOR
+#cmakedefine GINV_WIN32
+#cmakedefine GINV_GRAPHVIZ
+#cmakedefine GINV_ALLOCATOR
 
-#endif // GINV_POLY_CONFIG_H
+#endif // GINV_CONFIG_H

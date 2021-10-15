@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_JANET_H
-#define GINV_POLY_JANET_H
+#ifndef GINV_JANET_H
+#define GINV_JANET_H
 
 #include "util/allocator.h"
 #include "util/list.h"
@@ -28,10 +28,10 @@
 
 #include "config.h"
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   #include <sstream>
   #include <graphviz/gvc.h>
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
 namespace GInv {
 
@@ -108,9 +108,9 @@ protected:
   int         mPos;
   Link        mRoot;
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   static Agnode_t* draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd);
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
   static void setMNprec(Wrap *wrap, int v, ConstIterator j);
   static void setMNsucc(Wrap *wrap, int v,  ConstIterator j);
@@ -144,7 +144,7 @@ public:
       setMNsucc(wrap, 0, ConstIterator(mRoot));
   }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   void draw(Agraph_t *g, bool NMd) {
     draw(g, mRoot, 0, NMd);
   }
@@ -162,11 +162,11 @@ public:
     gvFreeLayout(gvc, g);
     agclose(g);
   }
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 };
 
 typedef GC<Janet> JanetGC;
 
 }
 
-#endif // GINV_POLY_JANET_H
+#endif // GINV_JANET_H

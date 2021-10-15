@@ -18,17 +18,17 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_GB_H
-#define GINV_POLY_GB_H
+#ifndef GINV_GB_H
+#define GINV_GB_H
 
 #include "janet.h"
 
 #include "config.h"
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   #include <sstream>
   #include <graphviz/gvc.h>
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
 namespace GInv {
 
@@ -53,7 +53,7 @@ public:
   Wrap* find(const Monom &m) const;
   void insert(Wrap *wrap);
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   void draw(const char* format, const char* filename) const {
     GVC_t *gvc=gvContext();
     Agraph_t *g=agopen((char*)"GB",  Agdirected, (Agdisc_t*)nullptr);
@@ -68,9 +68,9 @@ public:
     gvFreeLayout(gvc, g);
     agclose(g);
   }
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 };
 
 }
 
-#endif // GINV_POLY_GB_H
+#endif // GINV_GB_H

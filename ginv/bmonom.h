@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_BMONOM_H
-#define GINV_POLY_BMONOM_H
+#ifndef GINV_BMONOM_H
+#define GINV_BMONOM_H
 
 #include <cassert>
 
@@ -85,4 +85,4 @@ public:
 
 }
 
-#endif // GINV_POLY_BMONOM_H
+#endif // GINV_BMONOM_H

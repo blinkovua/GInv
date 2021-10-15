@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_WRAP_H
-#define GINV_POLY_WRAP_H
+#ifndef GINV_WRAP_H
+#define GINV_WRAP_H
 
 #include "util/allocator.h"
 #include "util/list.h"
@@ -106,4 +106,4 @@ typedef List<Wrap*> ListWrap;
 
 }
 
-#endif // GINV_POLY_WRAP_H
+#endif // GINV_WRAP_H

@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_POLY_INT_H
-#define GINV_POLY_POLY_INT_H
+#ifndef GINV_POLY_INT_H
+#define GINV_POLY_INT_H
 
 #include "util/allocator.h"
 #include "util/list.h"
@@ -279,4 +279,4 @@ typedef GC<PolyInt> PolyIntGC;
 
 }
 
-#endif // GINV_POLY_POLY_INT_H
+#endif // GINV_POLY_INT_H

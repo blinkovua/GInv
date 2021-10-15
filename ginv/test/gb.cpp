@@ -133,9 +133,9 @@ void GBPoly::test1() {
     }
   }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   gb.draw("pdf", "gb_test1.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     for(int v=0; v < n; v++) {
@@ -216,9 +216,9 @@ void GBPoly::test2() {
       ++deg;
     }
   }
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   gb.draw("pdf", "gb_test2.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
     Allocator allocator[1];
@@ -289,9 +289,9 @@ void GBPoly::test3() {
 
     addQ(Q, Qtmp, d1, d2);
   }
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   gb.draw("pdf", "gb_test3.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
 
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j) {
@@ -354,9 +354,9 @@ void GBPoly::test6() {
     tmp.swap(Q);
   }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   gb.draw("pdf", "gb_test6.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     for(int v=0; v < n; v++) {
@@ -416,9 +416,9 @@ void GBPoly::test7() {
     tmp.swap(Q);
   }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
   gb.draw("pdf", "gb_test7.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
   for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
     for(int v=0; v < n; v++) {

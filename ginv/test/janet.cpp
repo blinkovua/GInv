@@ -100,10 +100,10 @@ void JanetPoly::test1() {
         CPPUNIT_ASSERT(wrap->NM(v) == j.data()->NM(v));
     }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
     if (i+1 == l)
       janet.draw("pdf", "janet_test1.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
     for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
         allocator->destroy(j.data());
@@ -162,12 +162,12 @@ void JanetPoly::test2() {
       }
 //       if (!first)
 //         break;
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
       if (first && i+1 == l) {
         janet.draw("pdf", "janet_test21b.pdf");
         first = false;
       }
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
       List<Wrap*> tmp(allocator);
       for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
         for(int k=0; k < j.data()->lm().size(); k++)
@@ -217,10 +217,10 @@ void JanetPoly::test2() {
       }
     }
 
-#ifdef GINV_POLY_GRAPHVIZ
+#ifdef GINV_GRAPHVIZ
     if (i+1 == l)
       janet.draw("pdf", "janet_test21e.pdf");
-#endif // GINV_POLY_GRAPHVIZ
+#endif // GINV_GRAPHVIZ
 
     CPPUNIT_ASSERT(T.length() == janet.size());
 //   std::cerr << "Janet = " << T.length() << std::endl;

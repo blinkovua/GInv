@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_BASIS_H
-#define GINV_POLY_BASIS_H
+#ifndef GINV_BASIS_H
+#define GINV_BASIS_H
 
 #include "janet.h"
 
@@ -39,4 +39,4 @@ public:
 
 }
 
-#endif // GINV_POLY_BASIS_H
+#endif // GINV_BASIS_H

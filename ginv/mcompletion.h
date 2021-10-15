@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_MCOMPLETION_H
-#define GINV_POLY_MCOMPLETION_H
+#ifndef GINV_MCOMPLETION_H
+#define GINV_MCOMPLETION_H
 
 #include "util/allocator.h"
 #include "util/list.h"
@@ -130,4 +130,4 @@ public:
 
 }
 
-#endif // GINV_POLY_MCOMPLETION_H
+#endif // GINV_MCOMPLETION_H

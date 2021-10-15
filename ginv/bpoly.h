@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_BPOLY_H
-#define GINV_POLY_BPOLY_H
+#ifndef GINV_BPOLY_H
+#define GINV_BPOLY_H
 
 #include <cassert>
 
@@ -223,4 +223,4 @@ typedef GC<BPoly> BPolyGC;
 
 }
 
-#endif // GINV_POLY_BPOLY_H
+#endif // GINV_BPOLY_H
