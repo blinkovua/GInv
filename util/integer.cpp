@@ -129,7 +129,6 @@ void Integer::gcd(const Integer& a) {
 void Integer::gcd(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-  assert(a.divisible(b));
 #ifdef GINV_POLY_INTEGER_ALLOCATOR
   reallocate(min(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)));
 #endif // GINV_POLY_INTEGER_ALLOCATOR

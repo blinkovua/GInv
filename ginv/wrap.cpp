@@ -22,6 +22,18 @@
 
 namespace GInv {
 
+void Wrap::update(const Monom& m) {
+  if (mLm.lex(m) != 0) {
+    mLm = m;
+    mAnsector = m;
+    for(int i=0; i < mLm.size(); i++) {
+      mNM[i] = false;
+      mNMd[i] = false;
+      mBuild[i] = false;
+    }
+  }
+}
+
 std::ostream& operator<<(std::ostream& out, const Wrap &a) {
   out << a.lm() << a.ansector() << '[';
   if (a.NM(0))

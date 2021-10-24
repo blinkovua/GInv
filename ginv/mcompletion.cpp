@@ -53,7 +53,7 @@ void MCompletion::prolong() {
   for(ListWrap::ConstIterator j(mT.begin()); j; ++j)
     for(int k=0; k < j.data()->lm().size(); k++)
       if (j.data()->NM(k) && !j.data()->build(k)) {
-        mQ.push(new(mAllocator) Wrap(mAllocator, k, j.data()));
+        mQ.push(new(mAllocator) Wrap(k, j.data()));
       }
 }
 
@@ -111,7 +111,7 @@ void MJanet::prolong(Janet::ConstIterator j) {
     if (j.wrap())
       for(int k=0; k < j.wrap()->lm().size(); k++)
         if (j.wrap()->NM(k) && !j.wrap()->build(k))
-          mQ.push(new(mAllocator) Wrap(mAllocator, k, j.wrap()));
+          mQ.push(new(mAllocator) Wrap(k, j.wrap()));
     if (j.nextVar())
       prolong(j.nextVar());
     j.deg();

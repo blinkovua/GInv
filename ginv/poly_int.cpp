@@ -22,133 +22,6 @@
 
 namespace GInv {
 
-int PolyInt::TOPlex(const Monom& a, const Monom& b) {
-  int r=a.lex(b);
-  if (r == 0 && a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  return r;
-}
-
-int PolyInt::TOPdeglex(const Monom& a, const Monom& b) {
-  int r=a.deglex(b);
-  if (r == 0 && a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  return r;
-}
-
-int PolyInt::TOPalex(const Monom& a, const Monom& b) {
-  int r=a.alex(b);
-  if (r == 0 && a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  return r;
-}
-
-int PolyInt::TOPlex2(const Monom& a, const Monom& b, const Monom& c) {
-  int r=a.lex(b, c);
-  if (r == 0 && a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  return r;
-}
-
-int PolyInt::TOPdeglex2(const Monom& a, const Monom& b, const Monom& c) {
-  int r=a.deglex(b, c);
-  if (r == 0 && a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  return r;
-}
-
-int PolyInt::TOPalex2(const Monom& a, const Monom& b, const Monom& c) {
-  int r=a.alex(b, c);
-  if (r == 0 && a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  return r;
-}
-
-int PolyInt::POTlex(const Monom& a, const Monom& b) {
-  int r;
-  if (a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  else
-    r = a.lex(b);
-  return r;
-}
-
-int PolyInt::POTdeglex(const Monom& a, const Monom& b) {
-  int r;
-  if (a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  else
-    r = a.deglex(b);
-  return r;
-}
-
-int PolyInt::POTalex(const Monom& a, const Monom& b) {
-  int r;
-  if (a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  else
-    r = a.alex(b);
-  return r;
-}
-
-int PolyInt::POTlex2(const Monom& a, const Monom& b, const Monom& c) {
-  int r;
-  if (a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  else
-    r = a.lex(b, c);
-  return r;
-}
-
-int PolyInt::POTdeglex2(const Monom& a, const Monom& b, const Monom& c) {
-  int r;
-  if (a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  else
-    r = a.deglex(b, c);
-  return r;
-}
-
-int PolyInt::POTalex2(const Monom& a, const Monom& b, const Monom& c) {
-  int r;
-  if (a.pos() != b.pos())
-    r = (a.pos() > b.pos()) ? 1: -1;
-  else
-    r = a.alex(b, c);
-  return r;
-}
-
-void PolyInt::setOrder(int order) {
-  switch(order) {
-    case TOP | lex:
-      mCmp1 = TOPlex;
-      mCmp2 = TOPlex2;
-      break;
-    case TOP | deglex:
-      mCmp1 = TOPdeglex;
-      mCmp2 = TOPdeglex2;
-      break;
-    case TOP | alex:
-      mCmp1 = TOPalex;
-      mCmp2 = TOPalex2;
-      break;
-    case POT | lex:
-      mCmp1 = POTlex;
-      mCmp2 = POTlex2;
-      break;
-    case POT | deglex:
-      mCmp1 = POTdeglex;
-      mCmp2 = POTdeglex2;
-      break;
-    case POT | alex:
-      mCmp1 = POTalex;
-      mCmp2 = POTalex2;
-      break;
-    default:
-      assert(false);
-  }
-}
-
 void PolyInt::clear() {
   List<Term*>::Iterator i(mHead.begin());
   while(i) {
@@ -158,12 +31,9 @@ void PolyInt::clear() {
 }
 
 PolyInt::PolyInt(Allocator* allocator, Monom::Variable v, const PolyInt& a):
+      Poly(a.mOrder, a.mSize),
       mAllocator(allocator),
-      mOrder(a.mOrder),
-      mSize(a.mSize),
-      mHead(allocator),
-      mCmp1(a.mCmp1),
-      mCmp2(a.mCmp2) {
+      mHead(allocator) {
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
   while(ia) {
@@ -175,12 +45,9 @@ PolyInt::PolyInt(Allocator* allocator, Monom::Variable v, const PolyInt& a):
 }
 
 PolyInt::PolyInt(Allocator* allocator, const PolyInt& a):
+      Poly(a.mOrder, a.mSize),
       mAllocator(allocator),
-      mOrder(a.mOrder),
-      mSize(a.mSize),
-      mHead(allocator),
-      mCmp1(a.mCmp1),
-      mCmp2(a.mCmp2) {
+      mHead(allocator) {
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
   while(ia) {
@@ -191,8 +58,11 @@ PolyInt::PolyInt(Allocator* allocator, const PolyInt& a):
   assert(assertValid());
 }
 
-void PolyInt::swap(PolyInt& a) {//TODO
-  assert(compare(a));
+void PolyInt::swap(PolyInt& a) {
+  assert(this != &a);
+
+  Poly::swap(a);
+
   auto tmp=mAllocator;
   mAllocator = a.mAllocator;
   a.mAllocator = tmp;
@@ -200,8 +70,10 @@ void PolyInt::swap(PolyInt& a) {//TODO
   mHead.swap(a.mHead);
 }
 
-void PolyInt::operator=(PolyInt &&a) {//TODO
+void PolyInt::operator=(PolyInt &&a) {
   assert(this != &a);
+
+  Poly::operator=(a);
   clear();
   swap(a);
 }
@@ -209,12 +81,10 @@ void PolyInt::operator=(PolyInt &&a) {//TODO
 
 void PolyInt::operator=(const PolyInt &a) {
   assert(this != &a);
-  clear();
 
-  mOrder = a.mOrder;
-  mSize = a.mSize;
-  mCmp1 = a.mCmp1;
-  mCmp2 = a.mCmp2;
+  Poly::operator=(a);
+
+  clear();
 
   List<Term*>::Iterator i(mHead.begin());
   List<Term*>::ConstIterator ia(a.mHead.begin());
@@ -224,6 +94,16 @@ void PolyInt::operator=(const PolyInt &a) {
     ++i;
   }
   assert(assertValid());
+}
+
+int PolyInt::maxPos() const {
+  int pos=-1;
+  List<Term*>::ConstIterator i(mHead.begin());
+  while(i) {
+    pos = (i.data()->mMonom.pos() > pos) ? i.data()->mMonom.pos(): pos;
+    ++i;
+  }
+  return pos;
 }
 
 int PolyInt::norm() const {
@@ -270,7 +150,7 @@ void PolyInt::add(const char* hex) {
 }
 
 void PolyInt::add(const PolyInt &a) {
-  assert(compare(a));
+  assert(comparable(a));
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
   while(i && ia)
@@ -328,7 +208,7 @@ void PolyInt::sub(const char* hex) {
 }
 
 void PolyInt::sub(const PolyInt &a) {
-  assert(compare(a));
+  assert(comparable(a));
   List<Term*>::ConstIterator ia(a.mHead.begin());
   List<Term*>::Iterator i(mHead.begin());
   while(i && ia)
@@ -381,7 +261,7 @@ void PolyInt::mult(const char* hex) {
 }
 
 void PolyInt::mult(const PolyInt &a) {
-  assert(compare(a));
+  assert(comparable(a));
   if (mHead.length() == 0)
     ;
   else if (a.mHead.length() == 0)
@@ -415,6 +295,7 @@ void PolyInt::mult(const PolyInt &a) {
       }
     }
     mHead.swap(tmp);
+    mAllocator->destroy(tmp.head());
   }
   else {
     List<Term*> sum(mAllocator);
@@ -464,6 +345,11 @@ void PolyInt::mult(const PolyInt &a) {
       }
     } while(i);
     mHead.swap(sum);
+    List<Term*>::Iterator k(sum.begin());
+    while(k) {
+      mAllocator->destroy(k.data());
+      k.del();
+    }
   }
   assert(assertValid());
 }
@@ -487,10 +373,12 @@ void PolyInt::reduction(const PolyInt& a) {
   assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
   assert(lm().divisiable(a.lm()));
 
-  Monom m2(mAllocator, lm());
+  Allocator allocator[1];
+
+  Monom m2(allocator, lm());
   m2.div(a.lm());
 
-  Integer tmp1(mAllocator), tmp2(mAllocator), k1(mAllocator), k2(mAllocator);
+  Integer tmp1(allocator), tmp2(allocator), k1(allocator), k2(allocator);
   tmp1.gcd(lc(), a.lc());
   k1.div(a.lc(), tmp1);
   k2.div(lc(), tmp1);
@@ -499,6 +387,7 @@ void PolyInt::reduction(const PolyInt& a) {
   List<Term*>::Iterator i(mHead.begin());
   List<Term*>::ConstIterator ia(a.mHead.begin());
 
+  mAllocator->destroy(i.data());
   i.del();
   ++ia;
   while(i && ia) {
@@ -542,10 +431,12 @@ void PolyInt::redTail(List<Term*>::Iterator i1, const PolyInt& a) {
   assert(mCmp1 == a.mCmp1 && mCmp2 == a.mCmp2);
   assert(i1.data()->mMonom.divisiable(a.lm()));
 
-  Monom m2(mAllocator, lm());
+  Allocator allocator[1];
+
+  Monom m2(allocator, i1.data()->mMonom);
   m2.div(a.lm());
 
-  Integer tmp1(mAllocator), tmp2(mAllocator), k1(mAllocator), k2(mAllocator);
+  Integer tmp1(allocator), tmp2(allocator), k1(allocator), k2(allocator);
   tmp1.gcd(i1.data()->mCoeff, a.lc());
   k1.div(a.lc(), tmp1);
   k2.div(i1.data()->mCoeff, tmp1);
@@ -560,6 +451,7 @@ void PolyInt::redTail(List<Term*>::Iterator i1, const PolyInt& a) {
 
   List<Term*>::ConstIterator ia(a.mHead.begin());
 
+  mAllocator->destroy(i.data());
   i.del();
   ++ia;
   while(i && ia) {
@@ -592,15 +484,12 @@ void PolyInt::redTail(List<Term*>::Iterator i1, const PolyInt& a) {
     ++i;
   }
   while(ia) {
-      i.insert(new(mAllocator) Term(mAllocator, ia.data()->mMonom, m2));
-      i.data()->mCoeff.mult(ia.data()->mCoeff, k2);
-      ++i;
-      ++ia;
+    i.insert(new(mAllocator) Term(mAllocator, ia.data()->mMonom, m2));
+    i.data()->mCoeff.mult(ia.data()->mCoeff, k2);
+    ++i;
+    ++ia;
   }
 }
-
-// void PolyInt::nf(Janet &a);
-// void PolyInt::nfTail(Janet &a);
 
 bool PolyInt::isPp() const {
   if (!mHead)
@@ -621,9 +510,7 @@ bool PolyInt::isPp() const {
   }
 }
 
-
 void PolyInt::pp() {
-  assert(!isPp());
   if (mHead) {
     List<Term*>::ConstIterator i(mHead.begin());
     if (i.data()->mCoeff.isAbsOne())
@@ -645,7 +532,6 @@ void PolyInt::pp() {
   }
 }
 
-
 std::ostream& operator<<(std::ostream& out, const PolyInt &a) {
   PolyInt::ConstIterator i(a.begin());
   if (!i)
@@ -661,8 +547,6 @@ std::ostream& operator<<(std::ostream& out, const PolyInt &a) {
   }
   return out;
 }
-
-
 
 bool PolyInt::assertValid() const {
   if (mHead) {
@@ -683,6 +567,130 @@ bool PolyInt::assertValid() const {
   return true;
 }
 
+void JanetPolyInt::build() {
+  if (mOneWrap)
+      return;
 
+  std::cerr << "START" << std::endl;
+  int pos=-1;
+  for(GCListWrapPolyInt::ConstIterator j(mQ.begin()); j; ++j) {
+    int p=j.data()->poly().maxPos();
+    pos = (p > pos)? p: pos;
+  }
+  std::cerr << "pos - " << pos << std::endl;
+  if (pos > mPos) {
+    GCJanet *tmp=new GCJanet[pos+2];
+    int i;
+    for(i=0; i < mPos+2; i++)
+      tmp[i].swap(mJanet[i]);
+    delete[] mJanet;
+    mPos = pos;
+    mJanet = tmp;
+  }
+  std::cerr << "mPos - " << mPos << std::endl;
+
+  int degPref=0;
+  while(mQ) {
+    int size=mQ.head()->poly().size();
+    int order=mQ.head()->poly().order();
+
+    std::cerr << "1 mQ - " << mQ.length() << " mT - " << mT.length() << std::endl;
+
+    int deg=mQ.head()->poly().degree();
+    GCListWrapPolyInt::Iterator j(mQ.begin());
+    while(j) {
+      mReduction += j.data()->poly().nf(*this);
+      if (j.data()->poly().isZero()) {
+        delete j.data();
+        j.del();
+      }
+      else {
+        int d=j.data()->poly().degree();
+//         std::cerr << d << " AA " << j.data()->poly() << std::endl;
+        deg = (deg > d)? d: deg;
+        j.data()->poly().pp();
+        j.data()->reallocate();
+        ++j;
+      }
+    }
+
+    std::cerr << "deg - " << deg << std::endl;
+
+    if (degPref == 0)
+      degPref = deg;
+
+    j = mQ.begin();
+    while(j) {
+//       std::cerr << j.data()->poly() << std::endl;
+      if (j.data()->poly().degree() > deg)
+        ++j;
+      else {
+        mReduction += j.data()->poly().nf(*this);
+        if (j.data()->poly().isZero())
+          delete j.data();
+        else {
+          if (j.data()->poly().degree() == 0) {
+            assert(mOneWrap == nullptr);
+            for(GCListWrapPolyInt::Iterator j(mQ.begin()); j; j.del())
+              delete j.data();
+            for(GCListWrapPolyInt::Iterator j(mT.begin()); j; j.del())
+              delete j.data();
+            delete[] mJanet;
+            mJanet = nullptr;
+            Allocator allocator[1];
+            mOneWrap = new WrapPolyInt(PolyInt(allocator, order, size, "0x1"));
+            std::cerr << "deg - 0" << *mOneWrap << std::endl;
+            break;
+          }
+
+//           std::cerr << "A" << std::endl;
+          mReduction += j.data()->poly().nfTail(*this);
+//           std::cerr << "AA" << std::endl;
+          j.data()->poly().pp();
+//           std::cerr << "AAA" << std::endl;
+          j.data()->update(j.data()->poly().lm());
+//           std::cerr << "AAAA" << std::endl;
+          j.data()->reallocate();
+//           std::cerr << "AAAAA " << j.data()->poly() << std::endl;
+          mJanet[j.data()->lm().pos()+1].insert(j.data());
+//           std::cerr << "AAAAAA" << std::endl;
+          mT.push(j.data());
+//           std::cerr << "AAAAAAA" << std::endl;
+        }
+        j.del();
+      }
+    }
+    
+    if (degPref > deg) {
+      delete[] mJanet;
+      mJanet = new GCJanet[mPos+2];
+      for(GCListWrapPolyInt::Iterator j(mT.begin()); j; j.del()) {
+//         for(int i=0; i < size; i++)
+//           j.data()->setNM(i) = false;
+        mQ.push(j.data());
+      }
+    }
+    degPref = deg;
+
+    if (mOneWrap)
+      break;
+
+    std::cerr << "2 mQ - " << mQ.length() << " mT - " << mT.length() << std::endl;
+
+    for(GCListWrapPolyInt::ConstIterator k(mT.begin()); k; ++k) {
+      mReduction += k.data()->poly().nfTail(*this);
+      k.data()->poly().pp();
+      k.data()->reallocate();
+      if (k.data()->lm().degree() <= deg+1)
+        for(int i=0; i < size; i++)
+          if (k.data()->NM(i) && !k.data()->build(i))
+            mQ.push(new WrapPolyInt(i, k.data()));
+    }
+
+    std::cerr << "3 mQ - " << mQ.length() << " mT - " << mT.length() << std::endl;
+
+//     break;
+  }
+}
 
 }

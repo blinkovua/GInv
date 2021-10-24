@@ -41,7 +41,7 @@ int prolong(Janet::ConstIterator i, Janet &j, List<Wrap*> &q, Allocator* allocat
   else {
     for(int k=0; k < i.wrap()->lm().size(); k++)
       if (i.wrap()->NM(k) && !i.wrap()->build(k)) {
-        Wrap *w = new(allocator) Wrap(allocator, k, i.wrap());
+        Wrap *w = new(allocator) Wrap(k, i.wrap());
         if (!j.find(w->lm())) {
           ++r;
           j.insert(w);
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
         ++j;
     }
     if (!j) {
-      Q.push(new(allocator) Wrap(allocator, m));
+      Q.push(new(allocator) Wrap(m));
       std::cerr << m << std::endl;
     }
   }
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
       for(int k=0; k < j.data()->lm().size(); k++)
         if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          Wrap *w = new(allocator) Wrap(k, j.data());
           tmp.push(w);
         }
     tmp.swap(Q);

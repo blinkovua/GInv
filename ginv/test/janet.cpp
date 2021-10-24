@@ -72,7 +72,7 @@ void JanetPoly::test1() {
     Monom m(allocator, s, -1);
     for(int k=0; k < n; k++) {
       Monom::rand_next(m);
-      Wrap *w=new(allocator) Wrap(allocator, m);
+      Wrap *w=new(allocator) Wrap(m);
 //       std::cerr << w->lm() << std::endl;
       if (janet.find(w->lm()))
         allocator->destroy(w);
@@ -128,7 +128,7 @@ void JanetPoly::test2() {
     Monom m(allocator, s, -1);
     for(int k=0; k < n; k++) {
       Monom::rand_next(m);
-      Wrap *w=new(allocator) Wrap(allocator, m);
+      Wrap *w=new(allocator) Wrap(m);
 //       std::cerr << w->lm() << std::endl;
       if (basis.find(w->lm()))
         allocator->destroy(w);
@@ -172,7 +172,7 @@ void JanetPoly::test2() {
       for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
         for(int k=0; k < j.data()->lm().size(); k++)
           if (j.data()->NM(k) && !j.data()->build(k)) {
-            Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+            Wrap *w = new(allocator) Wrap(k, j.data());
             ListWrap::Iterator j(tmp.begin());
             while(j && j.data()->lm().lex(w->lm()) < 0)
               ++j;
@@ -255,7 +255,7 @@ void JanetPoly::test3() {
     Monom m(allocator, s, -1);
     for(int k=0; k < n; k++) {
       Monom::rand_next(m);
-      Wrap *w=new(allocator) Wrap(allocator, m);
+      Wrap *w=new(allocator) Wrap(m);
       Qbase.push(w);
     }
 
@@ -267,7 +267,7 @@ void JanetPoly::test3() {
         Monom m(allocator, s, -1);
         for(List<Wrap*>::ConstIterator j(Qbase.begin()); j; ++j) {
           m.permutation(j.data()->lm(), per);
-          Wrap *w=new(allocator) Wrap(allocator, m);
+          Wrap *w=new(allocator) Wrap(m);
           Q.push(w);
         }
 
@@ -287,7 +287,7 @@ void JanetPoly::test3() {
           for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
             for(int k=0; k < j.data()->lm().size(); k++)
               if (j.data()->NM(k) && !j.data()->build(k)) {
-                Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+                Wrap *w = new(allocator) Wrap(k, j.data());
                 tmp.push(w);
               }
           tmp.swap(Q);

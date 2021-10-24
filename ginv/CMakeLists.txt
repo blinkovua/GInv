@@ -90,6 +90,8 @@ ADD_LIBRARY(ginv STATIC
   config.h
   monom.cpp
   monom.h
+  poly.cpp
+  poly.h
   wrap.cpp
   wrap.h
   mcompletion.cpp

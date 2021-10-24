@@ -86,6 +86,31 @@ bool Janet::ConstIterator::assertValid() {
     return wrap() != nullptr;
 }
 
+Janet::Link Janet::build(Link j, Allocator* allocator) {
+  assert(j);
+  Link r=new(allocator) Node(j->mDeg, j->mWrap);
+  Link i=r;
+  while(j->mNextDeg) {
+    if (j->mNextVar)
+      i->mNextVar = build(j->mNextVar, allocator);
+    j = j->mNextDeg;
+    i->mNextDeg = new(allocator) Node(j->mDeg, j->mWrap);
+    i = i->mNextDeg;
+  }
+  return r;
+}
+
+void Janet::clear(Link j, Allocator* allocator) {
+  assert(j);
+  while(j) {
+    if (j->mNextVar)
+      clear(j->mNextVar, allocator);
+    Link tmp=j;
+    j = j->mNextDeg;
+    allocator->dealloc(tmp);
+  }
+}
+
 #ifdef GINV_GRAPHVIZ
 Agnode_t* Janet::draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd) {
   std::stringstream ss;
@@ -195,9 +220,23 @@ void Janet::setMNsucc(Wrap *wrap, int v,  ConstIterator j) {
 //   } while(j);
 }
 
+void Janet::swap(Janet& a) {
+  assert(this != &a);
+
+  auto tmp1=mAllocator;
+  mAllocator = a.mAllocator;
+  a.mAllocator = tmp1;
+
+  auto tmp2=mSize;
+  mSize = a.mSize;
+  a.mSize = tmp2;
+
+  auto tmp3=mRoot;
+  mRoot = a.mRoot;
+  a.mRoot = tmp3;
+}
 
 Wrap* Janet::find(const Monom &m) const {
-  assert(mPos == m.pos());
   Link root=mRoot;
   Wrap* wrap=nullptr;
 
@@ -264,7 +303,6 @@ Wrap* Janet::find(const Monom &m) const {
 
 void Janet::insert(Wrap *wrap) {
   assert(wrap != nullptr);
-  assert(mPos == wrap->lm().pos());
   assert(find(wrap->lm()) == nullptr);
 
   Link &root = mRoot;

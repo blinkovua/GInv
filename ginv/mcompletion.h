@@ -52,7 +52,7 @@ public:
   ~MCompletion();
 
   void push(const Monom& m) {
-    insert(new(mAllocator) Wrap(mAllocator, m));
+    insert(new(mAllocator) Wrap(m));
   }
   void build();
 
@@ -121,7 +121,7 @@ public:
 
   void push(const Monom& m) {
 //     mQ.push(new(mAllocator) Wrap(mAllocator, m));
-    mJanet.insert(new(mAllocator) Wrap(mAllocator, m));
+    mJanet.insert(new(mAllocator) Wrap(m));
   }
   void build();
 

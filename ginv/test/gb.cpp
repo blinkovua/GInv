@@ -92,7 +92,7 @@ void GBPoly::test1() {
   List<Wrap*> Q(allocator);
 
 
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*v[2]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[1])*v[2]));
 
 //   for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
 //     std::cerr << j.data()->lm() << std::endl;
@@ -117,17 +117,17 @@ void GBPoly::test1() {
     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
       for(int k=0; k < j.data()->lm().size(); k++)
         if ((j.data()->NM(k) || j.data()->NMd(k)) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          Wrap *w = new(allocator) Wrap(k, j.data());
 //           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
           tmp.push(w);
         }
     tmp.swap(Q);
     if (!Q) {
       if (deg == 0) {
-        Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[1]*v[4]));
+        Q.push(new(allocator) Wrap(Monom(allocator, v[0])*v[1]*v[4]));
       }
       else if (deg == 1) {
-        Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[2]*v[2]*v[2]));
+        Q.push(new(allocator) Wrap(Monom(allocator, v[0])*v[2]*v[2]*v[2]));
       }
       ++deg;
     }
@@ -167,9 +167,9 @@ void GBPoly::test2() {
   List<Wrap*> Q(allocator);
 
 //   [1 0 0 0 0 1]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[5]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[0])*v[5]));
 //   [1 0 0 1 0 0]
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0])*v[3]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[0])*v[3]));
 
 //   for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
 //     std::cerr << j.data()->lm() << std::endl;
@@ -194,24 +194,24 @@ void GBPoly::test2() {
     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
       for(int k=0; k < j.data()->lm().size(); k++)
         if ((j.data()->NM(k) || j.data()->NMd(k)) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          Wrap *w = new(allocator) Wrap(k, j.data());
           tmp.push(w);
         }
     tmp.swap(Q);
     if (!Q) {
       if (deg == 0) {
         //   [0 2 1 0 0 0]
-        Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[2]));
+        Q.push(new(allocator) Wrap(Monom(allocator, v[1], 2)*v[2]));
       }
       else if (deg == 1) {
         //   [0 1 0 0 2 1]
-        Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*v[4]*v[4]*v[5]));
+        Q.push(new(allocator) Wrap(Monom(allocator, v[1])*v[4]*v[4]*v[5]));
       }
       else if (deg == 2) {
         //   [0 1 4 0 0 2]
-        Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1])*Monom(allocator, v[2], 4)*v[5]*v[5]));
+        Q.push(new(allocator) Wrap(Monom(allocator, v[1])*Monom(allocator, v[2], 4)*v[5]*v[5]));
         //   [0 0 2 1 3 1]
-        Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 2)*v[3]*Monom(allocator, v[4], 3)*v[5]));
+        Q.push(new(allocator) Wrap(Monom(allocator, v[2], 2)*v[3]*Monom(allocator, v[4], 3)*v[5]));
       }
       ++deg;
     }
@@ -256,7 +256,7 @@ void GBPoly::test3() {
   Monom m(allocator, s, -1);
   for(int i=0; i < n; i++) {
     Monom::rand_next(m);
-    Qtmp.push(new(allocator) Wrap(allocator, m));
+    Qtmp.push(new(allocator) Wrap(m));
   }
 
   for(List<Wrap*>::ConstIterator j(Qtmp.begin()); j; ++j)
@@ -281,7 +281,7 @@ void GBPoly::test3() {
     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
       for(int k=0; k < j.data()->lm().size(); k++)
         if ((j.data()->NM(k) || j.data()->NMd(k)) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          Wrap *w = new(allocator) Wrap(k, j.data());
 //           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
           tmp.push(w);
         }
@@ -322,11 +322,11 @@ void GBPoly::test6() {
   List<Wrap*> Q(allocator);
 
 //   {201,120,400,103,040}
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 2)*v[2]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[0]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 4)));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 3)*v[0]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 4)));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[0], 2)*v[2]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[1], 2)*v[0]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[0], 4)));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[2], 3)*v[0]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[1], 4)));
 
   for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
     std::cerr << j.data()->lm() << std::endl;
@@ -347,7 +347,7 @@ void GBPoly::test6() {
     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
       for(int k=0; k < j.data()->lm().size(); k++)
         if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          Wrap *w = new(allocator) Wrap(k, j.data());
 //           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
           tmp.push(w);
         }
@@ -384,11 +384,11 @@ void GBPoly::test7() {
   List<Wrap*> Q(allocator);
 
 //   {22001, 02105, 01010,00200, 00112}
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[0], 2)*Monom(allocator, v[1], 2)*v[4]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[1], 2)*v[2]*v[4]));
-  Q.push(new(allocator) Wrap(allocator,Monom(allocator, v[1])*v[3]));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[2], 2)));
-  Q.push(new(allocator) Wrap(allocator, Monom(allocator, v[4], 2)*v[2]*v[3]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[0], 2)*Monom(allocator, v[1], 2)*v[4]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[1], 2)*v[2]*v[4]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[1])*v[3]));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[2], 2)));
+  Q.push(new(allocator) Wrap(Monom(allocator, v[4], 2)*v[2]*v[3]));
 
   for(List<Wrap*>::ConstIterator j(Q.begin()); j; ++j)
     std::cerr << j.data()->lm() << std::endl;
@@ -409,7 +409,7 @@ void GBPoly::test7() {
     for(List<Wrap*>::ConstIterator j(T.begin()); j; ++j)
       for(int k=0; k < j.data()->lm().size(); k++)
         if (j.data()->NM(k) && !j.data()->build(k)) {
-          Wrap *w = new(allocator) Wrap(allocator, k, j.data());
+          Wrap *w = new(allocator) Wrap(k, j.data());
 //           std::cerr << j.data()->lm() << " -> " << w->lm() << std::endl;
           tmp.push(w);
         }

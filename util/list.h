@@ -147,12 +147,10 @@ public:
       mList->mAllocator->destroy(tmp);
       --mList->mLength;
     }
-    void clear() {
+    void clear() { //TODO
       assert(mLink);
       while (*mLink)
         del();
-      if (mList->mLength)
-        std::cout << mList->mLength << std::endl;
       assert(mList->mLength == 0);
     }
   };
@@ -165,9 +163,9 @@ public:
       mLength(0) {
   }
   inline List(List&& a):
-      mAllocator(a.allocator),
+      mAllocator(a.mAllocator),
       mHead(a.mHead),
-      mLength(a.mHead) {
+      mLength(a.mLength) {
     a.mHead = nullptr;
     a.mLength = 0;
   }

@@ -48,6 +48,8 @@ protected:
 
     Node(Monom::Variable deg): mDeg(deg), mWrap(nullptr),
       mNextDeg(nullptr), mNextVar(nullptr) {}
+    Node(Monom::Variable deg, Wrap* w): mDeg(deg), mWrap(w),
+      mNextDeg(nullptr), mNextVar(nullptr) {}
     ~Node() {}
   };
 
@@ -105,8 +107,10 @@ protected:
 
   Allocator*  mAllocator;
   int         mSize;
-  int         mPos;
   Link        mRoot;
+
+  static Link build(Link j, Allocator* allocator);
+  static void clear(Link j, Allocator* allocator);
 
 #ifdef GINV_GRAPHVIZ
   static Agnode_t* draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd);
@@ -116,19 +120,24 @@ protected:
   static void setMNsucc(Wrap *wrap, int v,  ConstIterator j);
 
 public:
-  explicit Janet(Allocator* allocator, int pos=-1):
+  explicit Janet(Allocator* allocator):
       mAllocator(allocator),
       mSize(0),
-      mPos(pos),
       mRoot(nullptr) {
   }
-  ~Janet() {
-    if (mRoot) {
-      Janet::Iterator j(mRoot);
-      j.clear(mAllocator);
-    }
-    assert(mRoot == nullptr);
+  explicit Janet(Allocator* allocator, const Janet& a):
+      mAllocator(allocator),
+      mSize(a.mSize),
+      mRoot(nullptr) {
+    if (a.mRoot)
+      mRoot = build(a.mRoot, mAllocator);
   }
+  ~Janet() {
+    if (mRoot)
+      clear(mRoot, mAllocator);
+  }
+
+  void swap(Janet& a);
 
   Janet::ConstIterator begin() const { return mRoot; }
   int size() const { return mSize;}
@@ -165,7 +174,7 @@ public:
 #endif // GINV_GRAPHVIZ
 };
 
-typedef GC<Janet> JanetGC;
+typedef GC<Janet> GCJanet;
 
 }
 

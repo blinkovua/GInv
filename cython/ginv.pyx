@@ -15,10 +15,6 @@ cdef extern from "timer.h" namespace "GInv":
 
 cdef class timer:
   cdef Timer ptr[1]
-  #def __cinit__(self):
-    #self.ptr = new Timer()
-  #def __dealloc__(self):
-    #del self.ptr
 
   def start(self):
     self.ptr.start()
@@ -41,7 +37,6 @@ cdef class timer:
         self.ptr.realTime(),\
       )
 
-
 cdef extern from "allocator.h" namespace "GInv":
   cdef cppclass Allocator:
     Allocator()
@@ -53,7 +48,7 @@ cdef extern from "allocator.h" namespace "GInv":
   cdef size_t allocator_currMemory "GInv::Allocator::currMemory"()
   cdef const Timer& allocator_timer "GInv::Allocator::timer"()
 
-cdef class const_timer:
+cdef class const_timer_GC:
   cdef const Timer* ptr
   def __cinit__(self):
     self.ptr = &allocator_timer()
@@ -72,6 +67,25 @@ cdef class const_timer:
         self.ptr.realTime(),\
       )
 
+cdef class const_timer:
+  cdef const Timer* ptr
+  def __cinit__(self):
+    self.ptr = NULL
+
+  def userTime(self):
+    return allocator_timer().userTime()
+  def sysTime(self):
+    return allocator_timer().sysTime()
+  def realTime(self):
+    return allocator_timer().realTime()
+
+  def __str__(self):
+    return "userTime: %.2f, sysTime: %.2f, realTime: %.2f" % (\
+        self.ptr.userTime(),\
+        self.ptr.sysTime(),\
+        self.ptr.realTime(),\
+      )
+
 cdef class allocator:
   cdef Allocator allocator[1]
 
@@ -83,7 +97,7 @@ cdef class allocator:
     return allocator_currMemory()
   @staticmethod
   def GC_timer():
-    return const_timer()
+    return const_timer_GC()
 
   def alloc(self):
     return self.allocator.alloc()
@@ -95,9 +109,6 @@ cdef class allocator:
         self.allocator.alloc(),\
         self.allocator.size(),\
       )
-
-#static_allocator = allocator()
-#cdef Allocator *__allocator=(<allocator>static_allocator).ptr
 
 cdef extern from "randpermutation.h" namespace "GInv":
   cdef cppclass RandPermutation_mt19937:
@@ -350,8 +361,6 @@ cdef extern from "poly_int.h" namespace "GInv":
     void next "operator++"()
 
   cdef cppclass PolyInt:
-    bool compare(const PolyInt& a) const
-
     PolyInt(PolyInt&& a)
     PolyInt(Allocator* allocator, int order)
     PolyInt(Allocator* allocator, int k, const Monom& a)
@@ -364,6 +373,9 @@ cdef extern from "poly_int.h" namespace "GInv":
     int norm() const
     const Monom& lm() const
     const Integer& lc() const
+    bool comparable(const PolyInt& a) const
+    int order() const
+    int size() const
 
     void minus()
     void addI "add"(const char *hex)
@@ -375,8 +387,6 @@ cdef extern from "poly_int.h" namespace "GInv":
     void pow(int deg)
 
     void reduction(const PolyInt& a)
-    #void nf(Janet &a)
-    #void nfTail(Janet &a)
     bool isPp() const
     void pp()
 
@@ -435,6 +445,25 @@ cdef class const_poly_int:
     r = const_integer()
     r.ptr = &self.ptr.lc()
     return r
+  def comparable(self, const_poly_int other):
+    return self.ptr.comparable(other.ptr[0])
+
+  def order(self):
+    cdef int c
+    c = self.ptr.order()
+    if c & 0x10:
+      r = "TOP"
+    else:
+      r = "POT"
+    if c & 0x01:
+      r = (r, "lex")
+    elif c & 0x02:
+      r = (r, "deglex")
+    else:
+      r = (r, "alex")
+    return r
+  def size(self):
+    return self.ptr.size()
 
   def __neg__(self):
     assert self.ptr
@@ -451,7 +480,7 @@ cdef class const_poly_int:
       assert self
       (<PolyInt*>r.ptr).addI(hex(other).encode("utf-8"))
     elif isinstance(other, const_poly_int):
-      assert (<const_poly_int>other).ptr and self.ptr.compare((<const_poly_int>other).ptr[0])
+      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
       (<PolyInt*>r.ptr).add((<const_poly_int>other).ptr[0])
     else:
       return NotImplemented
@@ -465,7 +494,7 @@ cdef class const_poly_int:
       assert self
       (<PolyInt*>r.ptr).subI(hex(other).encode("utf-8"))
     elif isinstance(other, const_poly_int):
-      assert (<const_poly_int>other).ptr and self.ptr.compare((<const_poly_int>other).ptr[0])
+      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
       (<PolyInt*>r.ptr).sub((<const_poly_int>other).ptr[0])
     else:
       return NotImplemented
@@ -479,7 +508,7 @@ cdef class const_poly_int:
       assert self
       (<PolyInt*>r.ptr).multI(hex(other).encode("utf-8"))
     elif isinstance(other, const_poly_int):
-      assert (<const_poly_int>other).ptr and self.ptr.compare((<const_poly_int>other).ptr[0])
+      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
       (<PolyInt*>r.ptr).mult((<const_poly_int>other).ptr[0])
     else:
       return NotImplemented
@@ -512,11 +541,11 @@ cdef class poly_int(const_poly_int):
     else:
       k = 0x20
     if order == "lex":
-      pass
+      k |= 0x01
     elif order == "deglex":
-      k += 1
+      k |= 0x02
     else:
-      k += 2
+      k |= 0x04
     r = poly_int()
     r.ptr = new PolyInt(r.allocator, k, a.ptr[0])
     return r
@@ -524,6 +553,7 @@ cdef class poly_int(const_poly_int):
   def reduction(poly_int self, const_poly_int other):
     assert self.ptr and other.ptr
     assert len(self) and len(other)
+    assert self.ptr.comparable((<const_poly_int>other).ptr[0])
     assert self.ptr.lm().divisiable(other.ptr.lm())
     (<PolyInt *>self.ptr).reduction(other.ptr[0])
     return self
@@ -534,11 +564,159 @@ cdef class poly_int(const_poly_int):
     (<PolyInt *>self.ptr).pp()
     return self
 
-#cdef class wrap:
-  #cdef const Wrap *ptr
+cdef extern from "poly_int.h" namespace "GInv":
+  cdef cppclass WrapPolyInt:
+    const Monom& lm() const
+    const Monom& ansector() const
+    bool isGB() const
 
-  #def __nonzero__(self):
-    #return self.ptr != NULL
+    bool NM(int var) const
+    bool build(int var) const
+    const PolyInt& poly() const
+
+cdef class wrap_poly_int:
+  cdef const WrapPolyInt *ptr
+  def __cinit__(self, ):
+    self.ptr = NULL
+    
+  def lm(self):
+    r = const_monom()
+    r.ptr = &self.ptr.lm()
+    return r
+  def ansector(self):
+    r = const_monom()
+    r.ptr = &self.ptr.ansector()
+    return r
+  def isGB(self):
+    return self.ptr.isGB()
+
+  def NM(self, int var):
+    return self.ptr.NM(var)
+  def build(self, int var):
+    return self.ptr.build(var)
+  def poly(self):
+    r = const_poly_int()
+    r.ptr = &self.ptr.poly()
+    return r
+
+  def __str__(self):
+    return "%s%s[%s]" % (self.lm(), self.ansector(),\
+        "".join("*" if self.ptr.NM(var) else " " for 0 <= var < self.ptr.lm().size()))
+
+cdef extern from "janet.h" namespace "GInv":
+   cdef cppclass Janet:
+     int size() const
+     void draw(const char* format, const char* filename) const
+
+cdef class const_janet:
+  cdef const Janet *ptr
+  def __cinit__(self, ):
+    self.ptr = NULL
+
+  def size(self):
+    return self.ptr.size()
+  def draw(self, format, filename):
+    self.ptr.draw(format.encode("utf-8"), filename.encode("utf-8"))
+    
+cdef extern from "poly_int.h" namespace "GInv":
+  cdef cppclass GCListWrapPolyIntConstIterator "GInv::GCListWrapPolyInt::ConstIterator":
+    WrapPolyInt* data() const
+    bool isNext "operator bool"() const
+    void next "operator++"()
+
+  cdef cppclass JanetPolyInt:
+    bool comparable(const PolyInt& a) const
+    void push(const PolyInt& a)
+
+    void build()
+
+    bool isOne()
+
+    int size() const
+    GCListWrapPolyIntConstIterator begin() const
+    WrapPolyInt* find(const Monom &m) const
+    void nf(PolyInt& a) const
+    int maxPos() const
+    const Janet& janet(int pos)
+
+    const Timer& timer() const
+    int reduction() const
+
+cdef class janet_poly_int:
+  cdef JanetPolyInt *ptr
+  def __cinit__(self, ):
+    self.ptr = new JanetPolyInt()
+  def __dealloc__(self):
+    del self.ptr
+
+
+  def __nonzero__(self):
+    assert self.ptr
+    return self.ptr.size() > 0
+  def __len__(self):
+    assert self.ptr
+    return self.ptr.size()
+  def __iter__(self):
+    assert self.ptr
+    cdef GCListWrapPolyIntConstIterator i
+    i = self.ptr.begin()
+    while i.isNext():
+      r = wrap_poly_int()
+      r.ptr = i.data()
+      i.next()
+      yield r
+
+  def comparable(self, const_poly_int other):
+    return self.ptr.comparable(other.ptr[0])
+
+  def push(self, const_poly_int other):
+    assert self.ptr.comparable(other.ptr[0])
+    self.ptr.push(other.ptr[0])
+    return self
+
+  def build(self):
+    self.ptr.build()
+    
+  def isOne(self):
+    return self.ptr.isOne()
+
+  def find(self, const_monom m):
+    cdef WrapPolyInt* w
+    w = self.ptr.find(m.ptr[0])
+    if w == NULL:
+      return None
+    else:
+      r = wrap_poly_int()
+      r.ptr = w
+      return r
+
+  def nf(self, const_poly_int p):
+    self.ptr.comparable(p.ptr[0])
+    self.ptr.nf((<PolyInt *>p.ptr)[0])
+    return p
+    
+  def maxPos(self):
+    return self.ptr.maxPos()
+  def janet(self, pos):
+    assert -1 <= pos <= self.ptr.maxPos()
+    r = const_janet()
+    r.ptr = &self.ptr.janet(pos)
+    return r
+
+  def timer(self):
+    r = const_timer()
+    r.ptr = &self.ptr.timer()
+    return r
+  def reduction(self):
+    return self.ptr.reduction()
+
+
+  #def janet(self, int pos):
+    #assert -1 <= pos <= self.ptr.maxPos()
+    #r = janet_poly_int()
+    #r.ptr = &self.ptr.janet(pos)
+    #return r
+    
   #def lm(self):
     #r = const_monom()
     #r.ptr = &self.ptr.lm()
@@ -547,19 +725,43 @@ cdef class poly_int(const_poly_int):
     #r = const_monom()
     #r.ptr = &self.ptr.ansector()
     #return r
-
   #def isGB(self):
     #return self.ptr.isGB()
+
   #def NM(self, int var):
     #return self.ptr.NM(var)
-  #def NMd(self, int var):
-    #return self.ptr.NMd(var)
   #def build(self, int var):
     #return self.ptr.build(var)
+  #def poly(self):
+    #r = poly_int()
+    #r.ptr = &self.ptr.poly()
+    #return r
 
-  #def __str__(self):
-    #return "%s%s[%s]" % (self.lm(), self.ansector(),\
-        #"".join("*" if self.ptr.NM(var) else " " for 0 <= var < self.ptr.lm().size()))
+
+#cdef extern from "basis.h" namespace "GInv":
+  #cdef cppclass Basis:
+    #Basis()
+
+    #bool compare(const PolyInt& a)
+    #void push(const PolyInt& a)
+
+    #void build();
+
+    #GCListWrapPolyIntConstIterator begin() const
+    #const JanetPolyInt& janet() const
+
+    #const Timer& timer() const
+    #int reduction() const
+
+#cdef class basis:
+  #cdef Basis *ptr
+  #def __cinit__(self):
+    #self.ptr = new Basis()
+  #def __dealloc__(self):
+    #del self.ptr
+
+  #def compare(self, const_poly_int a):
+    #return self.ptr.compare(a.ptr[0])
 
 #cdef extern from "mcompletion.h" namespace "GInv":
   #cdef cppclass MCompletion:

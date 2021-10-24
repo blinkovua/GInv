@@ -36,7 +36,7 @@ Allocator::Allocator(const Allocator& a) {
 
 Allocator::~Allocator() {
   if (mSize != 0)
-    std::cerr << "(mSize != 0) "<< mSize << std::endl;
+    std::cerr << this << " (mSize != 0) "<< mSize << std::endl;
 
   assert(mSize == 0);
   sCurrMemory -= mAlloc;

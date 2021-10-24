@@ -30,7 +30,7 @@
 namespace GInv {
 
 class Wrap {
-  Allocator*  mAllocator;
+  Allocator   mAllocator;
   Monom       mLm;
   Monom       mAnsector;
   bool*       mNM;
@@ -39,27 +39,39 @@ class Wrap {
 
 public:
   Wrap()=delete;
-  Wrap(const Wrap& a)=delete;
-  Wrap(Allocator* allocator, const Monom& m):
-      mAllocator(allocator),
-      mLm(allocator, m),
-      mAnsector(allocator, m),
-      mNM(new(allocator) bool[m.size()]),
-      mNMd(new(allocator) bool[m.size()]),
-      mBuild(new(allocator) bool[m.size()]) {
+  Wrap(const Wrap& a):
+      mAllocator(),
+      mLm(&mAllocator, a.mLm),
+      mAnsector(&mAllocator, a.mAnsector),
+      mNM(new(&mAllocator) bool[a.mLm.size()]),
+      mNMd(new(&mAllocator) bool[a.mLm.size()]),
+      mBuild(new(&mAllocator) bool[a.mLm.size()]) {
+    for(int i=0; i < mLm.size(); i++) {
+      mNM[i] = a.mNM[i];
+      mNMd[i] = a.mNMd[i];
+      mBuild[i] = a.mBuild[i];
+    }
+  }
+  Wrap(const Monom& m):
+      mAllocator(),
+      mLm(&mAllocator, m),
+      mAnsector(&mAllocator, m),
+      mNM(new(&mAllocator) bool[m.size()]),
+      mNMd(new(&mAllocator) bool[m.size()]),
+      mBuild(new(&mAllocator) bool[m.size()]) {
     for(int i=0; i < mLm.size(); i++) {
       mNM[i] = false;
       mNMd[i] = false;
       mBuild[i] = false;
     }
   }
-  Wrap(Allocator* allocator, Monom::Variable var, const Wrap* ansector):
-      mAllocator(allocator),
-      mLm(allocator, var, ansector->mLm),
-      mAnsector(allocator, ansector->mAnsector),
-      mNM(new(allocator) bool[ansector->mLm.size()]),
-      mNMd(new(allocator) bool[ansector->mLm.size()]),
-      mBuild(new(allocator) bool[ansector->mLm.size()]) {
+  Wrap(Monom::Variable var, const Wrap* ansector):
+      mAllocator(),
+      mLm(&mAllocator, var, ansector->mLm),
+      mAnsector(&mAllocator, ansector->mAnsector),
+      mNM(new(&mAllocator) bool[ansector->mLm.size()]),
+      mNMd(new(&mAllocator) bool[ansector->mLm.size()]),
+      mBuild(new(&mAllocator) bool[ansector->mLm.size()]) {
     assert((ansector->mNM[var] || ansector->mNMd[var]) && !ansector->mBuild[var]);
     ansector->mBuild[var] = true;
     for(int i=0; i < mLm.size(); i++) {
@@ -69,10 +81,12 @@ public:
     }
   }
   ~Wrap() {
-    mAllocator->dealloc(mNM, mLm.size());
-    mAllocator->dealloc(mNMd, mLm.size());
-    mAllocator->dealloc(mBuild, mLm.size());
+    mAllocator.dealloc(mNM, mLm.size());
+    mAllocator.dealloc(mNMd, mLm.size());
+    mAllocator.dealloc(mBuild, mLm.size());
   }
+
+  void update(const Monom& m);
 
   const Monom& lm() const { return mLm; }
   const Monom& ansector() const { return mAnsector; }
