@@ -18,7 +18,7 @@ INCLUDE(CPack)
 # SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 #Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.
-SET(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_BUILD_TYPE Release)
 
 # MSVC does not require any special flags
 IF(UNIX)
@@ -29,8 +29,8 @@ ENDIF(UNIX)
 SET(BUILD_TEST TRUE)
 SET(BUILD_FOR_PYTHON TRUE)
 SET(BUILD_GRAPHVIZ TRUE)
-SET(USE_ALLOCATOR TRUE)
-SET(USE_INTEGER_ALLOCATOR TRUE)
+# SET(USE_ALLOCATOR TRUE)
+# SET(USE_INTEGER_ALLOCATOR TRUE)
 
 IF(BUILD_DOC)
   INCLUDE(FindDoxygen)
@@ -81,6 +81,7 @@ ENDIF(WIN32)
 
 SET(GINV_UTIL_GRAPHVIZ ${BUILD_GRAPHVIZ})
 SET(GINV_UTIL_ALLOCATOR ${USE_ALLOCATOR})
+SET(GINV_UTIL_INTEGER_ALLOCATOR ${USE_INTEGER_ALLOCATOR})
 
 CONFIGURE_FILE(config.h.in "${PROJECT_SOURCE_DIR}/config.h")
 
@@ -97,6 +98,8 @@ ADD_LIBRARY(ginvutil STATIC
   randpermutation.h
   integer.cpp
   integer.h
+  hilbertpoly.cpp
+  hilbertpoly.h
 )
 
 TARGET_LINK_LIBRARIES(ginvutil

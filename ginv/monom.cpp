@@ -207,12 +207,26 @@ void Monom::operator=(const Monom &a) {
 }
 
 void Monom::permutation(const Monom &a, RandPermutation &p) {
-  assert(mSize == a.size());
+  assert(a.mSize == p.size());
   assert(mSize == p.size());
   mDegree = a.mDegree;
   for(int v=0; v < mSize; v++)
     mVariables[v] = a.mVariables[p[v]];
   assert(assertValid());
+}
+
+bool operator==(const Monom& a, const Monom& b) {
+  assert(a.mSize == b.mSize);
+  bool r=a.mDegree == b.mDegree;
+  if (r) {
+    const Monom::Variable *ia=a.mVariables,
+                          *ib=b.mVariables;
+    const Monom::Variable* const iend=a.mVariables+a.mSize;
+    do {
+      r = *ia++ == *ib++;
+    } while(r && ia < iend);
+  }
+  return r;  
 }
 
 bool Monom::divisiable(const Monom& a) const {
@@ -234,7 +248,7 @@ void Monom::mult(const Monom& a) {
   assert(mPos == -1 || a.mPos == -1);
   if (mPos == -1)
     mPos = a.mPos;
-  mDegree +=a.mDegree;
+  mDegree += a.mDegree;
   Variable *i=mVariables;
   const Variable* const iend=mVariables+mSize;
   const Variable* ia=a.mVariables;
@@ -244,6 +258,21 @@ void Monom::mult(const Monom& a) {
   assert(assertValid());
 }
 
+void Monom::mult(Monom::Variable v, const Monom& a) {
+  assert(mSize == a.mSize);
+  assert(0 <= v && v < mSize);
+  mPos = a.mPos;
+  mDegree = a.mDegree + 1;
+  Variable *i=mVariables;
+  const Variable* const iend=mVariables+mSize;
+  const Variable* ia=a.mVariables;
+  do {
+    *i++ = *ia++;
+  } while(i < iend);
+  ++mVariables[v];
+  assert(assertValid());
+}
+  
 void Monom::div(const Monom& a) {
   assert(divisiable(a));
   mDegree -=a.mDegree;

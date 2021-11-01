@@ -162,11 +162,11 @@ public:
     assert(mHead);
     return mHead.head()->mMonom.degree();
   }
-  int cmp(const PolyInt& a) const {
-    assert(mHead);
-    assert(a.mHead);
-    return mCmp1(lm(), a.lm());
-  }
+//   int cmp(const PolyInt& a) const {
+//     assert(mHead);
+//     assert(a.mHead);
+//     return mCmp1(lm(), a.lm());
+//   }
   int norm() const;
   const Monom& lm() const {
     assert(mHead);
@@ -187,11 +187,13 @@ public:
   void pow(int deg);
 
   void reduction(const PolyInt& a);
+  void redMaybe(const PolyInt& a);
   bool isPp() const;
   void pp();
 
   template <typename D> int nf(D &a);
   template <typename D> int nfTail(D &a);
+  template <typename D> bool isNf(D &a) const;
 
   friend PolyInt operator-(PolyInt&& a) {
     PolyInt r(std::move(a));
@@ -334,6 +336,19 @@ template <typename D> int PolyInt::nfTail(D &a) {
   return r;
 }
 
+template <typename D> bool PolyInt::isNf(D &a) const {
+  List<Term*>::ConstIterator i(mHead.begin());
+  if (i) {
+    ++i;
+    while(i) {
+      if (a.find(i.data()->mMonom))
+        break;
+      ++i;
+    }
+  }
+  return !i;
+}
+
 class JanetPolyInt {
   WrapPolyInt*         mOneWrap;
 
@@ -344,6 +359,17 @@ class JanetPolyInt {
 
   Timer                mTimer;
   int                  mReduction;
+  int                  mMaxEqualLm;
+  int                  mCritI;
+  int                  mCritII;
+  
+  void setPos();
+  void setOne(int order, int size);
+  void prolong(WrapPolyInt *w);
+  bool assertT() const;
+  
+  static void insert(GCListWrapPolyInt &lst, WrapPolyInt *w);
+  static bool assertSort(GCListWrapPolyInt &lst);
 
 public:
   explicit JanetPolyInt():
@@ -353,7 +379,10 @@ public:
       mPos(-2),
       mJanet(nullptr),
       mTimer(),
-      mReduction(0) {
+      mReduction(0),
+      mMaxEqualLm(0),
+      mCritI(0),
+      mCritII(0) {
   }
   ~JanetPolyInt() {
     delete mOneWrap;
@@ -373,10 +402,16 @@ public:
   void push(const PolyInt& a) {
     assert(comparable(a));
     if (mOneWrap == nullptr && a)
-      mQ.push(new WrapPolyInt(a));
+      insert(mQ, new WrapPolyInt(a));
   }
 
-  void build();
+
+  void algorithmTQ();
+  void algorithmTQ1();
+  void algorithmBlockTQ();
+  void build() {
+    algorithmTQ();
+  }
 
   bool isOne() const { return mOneWrap; }
 
@@ -407,6 +442,7 @@ public:
 
   const Timer& timer() const { return mTimer; }
   int reduction() const { return mReduction; }
+  int maxEqualLm() const { return mMaxEqualLm; }
 };
 
 }

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017 by Blinkov Yu. A.                                  *
+ *   Copyright (C) 2021 by Blinkov Yu. A.                                  *
  *   BlinkovUA@info.sgu.ru                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,59 +18,32 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_GB_H
-#define GINV_GB_H
-
-#include "janet.h"
-
-#include "config.h"
-
-#ifdef GINV_GRAPHVIZ
-  #include <sstream>
-  #include <graphviz/gvc.h>
-#endif // GINV_GRAPHVIZ
+#include "allocator.h"
+#include "hilbertpoly.h"
 
 namespace GInv {
 
-class GB {
-  static const int sMaxDegree;
+size_t HilbertPoly::buffer_size=4096*16;
+char*  HilbertPoly::buffer=new char[HilbertPoly::buffer_size];
 
-  Allocator*       mAllocator;
-  int              mSize;
-  int              mMaxDegree;
-  Janet**          mForest;
-
-public:
-  explicit GB(Allocator* allocator);
-  ~GB();
-
-  int size() const { return mSize;}
-  const Janet* operator[](int i) const {
-    assert(0 <= i && i < mMaxDegree);
-    return mForest[i];
-  }
-
-  const Wrap* find(const Monom &m) const;
-  void insert(Wrap *wrap);
-
-#ifdef GINV_GRAPHVIZ
-  void draw(const char* format, const char* filename) const {
-    GVC_t *gvc=gvContext();
-    Agraph_t *g=agopen((char*)"GB",  Agdirected, (Agdisc_t*)nullptr);
-    std::stringstream ss;
-    ss << "#GB = " << size();
-    agnode(g, (char*)ss.str().c_str(), 1);
-    for(int i=0; i < mMaxDegree; i++)
-      if (mForest[i])
-        mForest[i]->draw(g, true);
-    gvLayout(gvc, g, (char*)"dot");
-    gvRenderFilename(gvc, g, format, filename);
-    gvFreeLayout(gvc, g);
-    agclose(g);
-  }
-#endif // GINV_GRAPHVIZ
-};
+// const char* Integer::get_str(int base) const {
+//   assert(2 <= base && base <= 62);
+//   if (mMpz._mp_size == 0) {
+//     buffer[0] = '0';
+//     buffer[1] = '\0';
+//   }
+//   else {
+//     size_t size= mpz_sizeinbase(&mMpz, base) + 2;
+//     if (size > buffer_size) {
+//       delete[] buffer;
+//       buffer_size = (size*15/10/4096 + 1)*4096;
+//       buffer=new char[buffer_size];
+//     }
+//     assert(size <= buffer_size);
+//     char *res=mpz_get_str(buffer, base, &mMpz);
+//     assert(buffer == res);
+//   }
+//   return buffer;
+// }
 
 }
-
-#endif // GINV_GB_H

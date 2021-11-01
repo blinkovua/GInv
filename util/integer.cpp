@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "./integer.h"
+#include "integer.h"
 
 namespace GInv {
 
@@ -28,7 +28,7 @@ char*  Integer::buffer=new char[Integer::buffer_size];
 Integer::Integer(Allocator* allocator, const char *str):
       mAllocator(allocator) {
   mpz_init(&mMpz);
-#ifndef GINV_POLY_INTEGER_ALLOCATOR
+#ifndef GINV_UTIL_INTEGER_ALLOCATOR
   int r=mpz_set_str(&mMpz, str, 0);
   assert(r == 0);
 #else
@@ -39,14 +39,14 @@ Integer::Integer(Allocator* allocator, const char *str):
   reallocate(abs(tmp._mp_size));
   mpz_set(&mMpz, &tmp);
   mpz_clear(&tmp);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
 }
 
 void Integer::add(const Integer& a) {
   Integer tmp(mAllocator);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(max(abs(mMpz._mp_size), abs(a.mMpz._mp_size)) + 1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
+  tmp.reallocate(max(abs(mMpz._mp_size), abs(a.mMpz._mp_size)) + 1);
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_add(&tmp.mMpz, &mMpz, &a.mMpz);
   swap(tmp);
 }
@@ -54,17 +54,17 @@ void Integer::add(const Integer& a) {
 void Integer::add(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
   reallocate(max(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)) + 1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_add(&mMpz, &a.mMpz, &b.mMpz);
 }
 
 void Integer::sub(const Integer& a) {
   Integer tmp(mAllocator);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(max(abs(mMpz._mp_size), abs(a.mMpz._mp_size)) + 1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
+  tmp.reallocate(max(abs(mMpz._mp_size), abs(a.mMpz._mp_size)) + 1);
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_sub(&tmp.mMpz, &mMpz, &a.mMpz);
   swap(tmp);
 }
@@ -73,17 +73,17 @@ void Integer::sub(const Integer& a) {
 void Integer::sub(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
   reallocate(max(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)) + 1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_sub(&mMpz, &a.mMpz, &b.mMpz);
 }
 
 void Integer::mult(const Integer& a) {
   Integer tmp(mAllocator);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(max(abs(mMpz._mp_size) + abs(a.mMpz._mp_size));
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
+  tmp.reallocate(abs(mMpz._mp_size) + abs(a.mMpz._mp_size));
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_mul(&tmp.mMpz, &mMpz, &a.mMpz);
   swap(tmp);
 }
@@ -91,17 +91,17 @@ void Integer::mult(const Integer& a) {
 void Integer::mult(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
   reallocate(abs(a.mMpz._mp_size) + abs(b.mMpz._mp_size));
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_mul(&mMpz, &a.mMpz, &b.mMpz);
 }
 
 void Integer::div(const Integer& a) {
   Integer tmp(mAllocator);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(max(abs(mMpz._mp_size) - abs(a.mMpz._mp_size) + 1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
+  tmp.reallocate(abs(mMpz._mp_size) - abs(a.mMpz._mp_size) + 1);
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_divexact(&tmp.mMpz, &mMpz, &a.mMpz);
   swap(tmp);
 }
@@ -110,28 +110,26 @@ void Integer::div(const Integer& a, const Integer& b) {
   assert(this != &a);
   assert(this != &b);
   assert(a.divisible(b));
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
   reallocate(abs(a.mMpz._mp_size) - abs(b.mMpz._mp_size) + 1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_divexact(&mMpz, &a.mMpz, &b.mMpz);
 }
 
 void Integer::gcd(const Integer& a) {
   Integer tmp(mAllocator);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(min(abs(mMpz.mMpz._mp_size), abs(b.mMpz._mp_size)));
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
+  tmp.reallocate(max(abs(mMpz._mp_size), abs(a.mMpz._mp_size)));
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_gcd(&tmp.mMpz, &mMpz, &a.mMpz);
   swap(tmp);
 }
 
-
 void Integer::gcd(const Integer& a, const Integer& b) {
-  assert(this != &a);
-  assert(this != &b);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
-  reallocate(min(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)));
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+  assert(!a.isZero() && !b.isZero());
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
+  reallocate(max(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)));
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_gcd(&mMpz, &a.mMpz, &b.mMpz);
 }
 

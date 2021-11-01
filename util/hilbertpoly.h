@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017 by Blinkov Yu. A.                                  *
+ *   Copyright (C) 2021 by Blinkov Yu. A.                                  *
  *   BlinkovUA@info.sgu.ru                                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,59 +18,51 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_GB_H
-#define GINV_GB_H
+#ifndef GINV_UTIL_HILBERTPOLY_H
+#define GINV_UTIL_HILBERTPOLY_H
 
-#include "janet.h"
+#include <cassert>
+
+#include <gmp.h>
 
 #include "config.h"
 
-#ifdef GINV_GRAPHVIZ
-  #include <sstream>
-  #include <graphviz/gvc.h>
-#endif // GINV_GRAPHVIZ
-
 namespace GInv {
 
-class GB {
-  static const int sMaxDegree;
+class HilbertPoly {
+  static size_t buffer_size;
+  static char*  buffer;
 
-  Allocator*       mAllocator;
-  int              mSize;
-  int              mMaxDegree;
-  Janet**          mForest;
+  int              mDim;
+  __mpq_struct*    mCoeff;
 
 public:
-  explicit GB(Allocator* allocator);
-  ~GB();
-
-  int size() const { return mSize;}
-  const Janet* operator[](int i) const {
-    assert(0 <= i && i < mMaxDegree);
-    return mForest[i];
+  HilbertPoly(int dim):
+      mDim(dim+1),
+      mCoeff(new __mpq_struct[mDim]) {
+    for(int k = 0; k < mDim; k++)
+      mpq_init(mCoeff + k);
+  }
+  ~HilbertPoly() {
+    for(int k = 0; k < mDim; k++)
+      mpq_clear(mCoeff + k);
+    delete[] mCoeff;
   }
 
-  const Wrap* find(const Monom &m) const;
-  void insert(Wrap *wrap);
-
-#ifdef GINV_GRAPHVIZ
-  void draw(const char* format, const char* filename) const {
-    GVC_t *gvc=gvContext();
-    Agraph_t *g=agopen((char*)"GB",  Agdirected, (Agdisc_t*)nullptr);
-    std::stringstream ss;
-    ss << "#GB = " << size();
-    agnode(g, (char*)ss.str().c_str(), 1);
-    for(int i=0; i < mMaxDegree; i++)
-      if (mForest[i])
-        mForest[i]->draw(g, true);
-    gvLayout(gvc, g, (char*)"dot");
-    gvRenderFilename(gvc, g, format, filename);
-    gvFreeLayout(gvc, g);
-    agclose(g);
+  int dim() const { return mDim-1; }
+  const __mpq_struct* operator[](int k) const {
+    assert(0 <= k && k <= mDim);
+    return mCoeff + k;
   }
-#endif // GINV_GRAPHVIZ
+  const char* numer(int k) const;
+  const char* denom(int k) const;
+
+  void add(const HilbertPoly& a);
+  void sub(const HilbertPoly& a);
+  void mult(int a);
+  void binomial(long int a, unsigned long b);
 };
 
 }
 
-#endif // GINV_GB_H
+#endif // GINV_UTIL_HILBERTPOLY_H

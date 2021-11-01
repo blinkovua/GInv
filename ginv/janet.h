@@ -142,7 +142,7 @@ public:
   Janet::ConstIterator begin() const { return mRoot; }
   int size() const { return mSize;}
 
-  Wrap* find(const Monom &m) const;
+  const Wrap* find(const Monom &m) const;
   void insert(Wrap *wrap);
   void setMNprec(Wrap *wrap) {
     if (mRoot)

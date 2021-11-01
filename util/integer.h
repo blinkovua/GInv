@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef GINV_POLY_INTEGER_H
-#define GINV_POLY_INTEGER_H
+#ifndef GINV_UTIL_INTEGER_H
+#define GINV_UTIL_INTEGER_H
 
 #include <cassert>
 
@@ -75,18 +75,18 @@ public:
   Integer(Allocator* allocator, const Integer &a):
       mAllocator(allocator) {
     mpz_init(&mMpz);
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(abs(a.mMpz._mp_size));
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set(&mMpz, &a.mMpz);
   }
   ~Integer() {
-#ifndef GINV_POLY_INTEGER_ALLOCATOR
+#ifndef GINV_UTIL_INTEGER_ALLOCATOR
     mpz_clear(&mMpz);
 #else
     if (mMpz._mp_alloc)
       mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
   }
   Integer(Allocator* allocator, const char *str);
 
@@ -98,12 +98,12 @@ public:
     mpz_swap(&mMpz, &a.mMpz);
   }
   void operator=(Integer&& a) {
-#ifndef GINV_POLY_INTEGER_ALLOCATOR
+#ifndef GINV_UTIL_INTEGER_ALLOCATOR
     mpz_clear(&mMpz);
 #else
     if (mMpz._mp_alloc)
       mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mAllocator = a.mAllocator;
     mMpz._mp_alloc = a.mMpz._mp_alloc;
     mMpz._mp_size = a.mMpz._mp_size;
@@ -112,21 +112,21 @@ public:
     a.mMpz._mp_alloc = 0;
   }
   void operator=(const Integer& a) {
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(abs(a.mMpz._mp_size));
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set(&mMpz, &a.mMpz);
   }
   void set_si(signed long a) {
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set_si(&mMpz, a);
   }
   void set_ui(unsigned long a) {
-#ifdef GINV_POLY_INTEGER_ALLOCATOR
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(1);
-#endif // GINV_POLY_INTEGER_ALLOCATOR
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set_ui(&mMpz, a);
   }
 
@@ -157,4 +157,4 @@ public:
 
 }
 
-#endif // GINV_POLY_INTEGER_H
+#endif // GINV_UTIL_INTEGER_H

@@ -39,10 +39,10 @@ GB::~GB() {
   mAllocator->dealloc(mForest, mMaxDegree);
 }
 
-Wrap* GB::find(const Monom &m) const {
-  Wrap *r=nullptr;
+const Wrap* GB::find(const Monom &m) const {
+  const Wrap *r=nullptr;
   for(int i=0; i < mMaxDegree; i++) {
-    Wrap *tmp=mForest[i]->find(m);
+    const Wrap *tmp=mForest[i]->find(m);
     if (tmp) {
       int v=0;
       for(; v < m.size(); v++)

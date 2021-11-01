@@ -236,9 +236,9 @@ void Janet::swap(Janet& a) {
   a.mRoot = tmp3;
 }
 
-Wrap* Janet::find(const Monom &m) const {
+const Wrap* Janet::find(const Monom &m) const {
   Link root=mRoot;
-  Wrap* wrap=nullptr;
+  const Wrap* wrap=nullptr;
 
   if (root) {
     Janet::ConstIterator j(root);

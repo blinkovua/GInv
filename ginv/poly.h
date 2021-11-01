@@ -89,6 +89,9 @@ public:
 
   int order() const { return mOrder; }
   int size() const { return mSize; }
+  int cmp(const Monom& a, const Monom& b) const {
+    return mCmp1(a, b);
+  }
 
   bool comparable(const Poly& a) const {
     return mSize == a.mSize && mOrder == a.mOrder;

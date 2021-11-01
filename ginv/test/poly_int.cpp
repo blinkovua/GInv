@@ -79,12 +79,7 @@ void TestPolyInt::test1() {
   };
 
   CPPUNIT_ASSERT(p[0].length() == 1);
-//   PolyInt sum(allocator, u + v + z);
   p[5].add(p[0]);
-//   z.mult(v);
-//   z.add(v);
-//   z.add(v);
-//   z.add(y);
   p[5].add("-0x12368");
   std::cerr << p[5] << std::endl;
   WrapPolyInt w1(p[5]);
@@ -93,7 +88,7 @@ void TestPolyInt::test1() {
   WrapPolyInt w2(2, &w1);
   std::cerr << w2 << std::endl;
 
-//   std::cerr << (p[2] + p[5]) << std::endl;
+  std::cerr << (p[2] + p[5]) << std::endl;
 }
 
 void TestPolyInt::test2() {
@@ -287,6 +282,7 @@ void TestPolyInt::test4() {
 void TestPolyInt::test5() {
   Allocator allocator[1];
   const int n=7;
+
   Monom v[]={
     {allocator, 0, n, -1},
     {allocator, 1, n, -1},
@@ -296,6 +292,7 @@ void TestPolyInt::test5() {
     {allocator, 5, n, -1},
     {allocator, 6, n, -1},
   };
+
   PolyInt p[]={
     {allocator, PolyInt::TOP | PolyInt::deglex, v[0]},
     {allocator, PolyInt::TOP | PolyInt::deglex, v[1]},
@@ -371,12 +368,12 @@ void TestPolyInt::test5() {
 
   basis.build();
   std::cerr << "size - " << basis.size() << std::endl;
-  basis.janet(-1).draw("pdf", "cyclic6.pdf");
+  basis.janet(-1).draw("pdf", "cyclic7.pdf");
 
-  JanetPolyInt basis1;
-  for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
-    basis1.push(k.data()->poly());
-  basis1.build();
-  std::cerr << "size - " << basis1.size() << std::endl;
-  basis1.janet(-1).draw("pdf", "cyclic6a.pdf");
+//   JanetPolyInt basis1;
+//   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
+//     basis1.push(k.data()->poly());
+//   basis1.build();
+//   std::cerr << "size - " << basis1.size() << std::endl;
+//   basis1.janet(-1).draw("pdf", "cyclic7a.pdf");
 }

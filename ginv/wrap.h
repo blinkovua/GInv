@@ -87,10 +87,22 @@ public:
   }
 
   void update(const Monom& m);
+  void clearNM() const {
+    for(int i=0; i < mLm.size(); i++) {
+      mNM[i] = false;
+    }
+  }
 
   const Monom& lm() const { return mLm; }
   const Monom& ansector() const { return mAnsector; }
   bool isGB() const { return mAnsector.degree() == mLm.degree(); }
+  int multi() const {
+    int sum=0;
+    for(int i=0; i < mLm.size(); i++)
+      if (mNM[i])
+        ++sum;
+    return sum;
+  }
 
   void setNM(int var) const {
     assert(0 <= var && var < mLm.size());
@@ -111,6 +123,10 @@ public:
   bool build(int var) const {
     assert(0 <= var && var < mLm.size());
     return mBuild[var];
+  }
+  void setBuild(int var) const {
+    assert(0 <= var && var < mLm.size());
+    mBuild[var] = true;
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Wrap &a);

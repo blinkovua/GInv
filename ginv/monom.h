@@ -97,6 +97,11 @@ public:
   int size() const { return mSize; }
   int pos() const { return mPos; }
   int degree() const { return mDegree; }
+  
+  friend bool operator==(const Monom& a, const Monom& b);
+  friend inline bool operator!=(const Monom& a, const Monom& b) {
+    return !operator==(a, b);
+  }
 
   Variable operator[](int i) const {
     assert(0 <= i && i < mSize);
@@ -111,6 +116,7 @@ public:
   bool divisiable(const Monom& a) const;
 
   void mult(const Monom& a);
+  void mult(Variable v, const Monom& a);
   void div(const Monom& a);
 
   int gcd(const Monom& a) const;

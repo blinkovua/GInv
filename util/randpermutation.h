@@ -21,11 +21,11 @@
 #ifndef GINV_UTIL_RANDPERMUTATION_H
 #define GINV_UTIL_RANDPERMUTATION_H
 
-#include "config.h"
-
 #include <cassert>
 #include <random>
 #include <iostream>
+
+#include "config.h"
 
 namespace GInv {
 
