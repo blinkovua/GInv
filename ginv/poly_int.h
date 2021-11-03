@@ -369,6 +369,7 @@ class JanetPolyInt {
   bool assertT() const;
   
   static void insert(GCListWrapPolyInt &lst, WrapPolyInt *w);
+  static void merge(GCListWrapPolyInt &lst, GCListWrapPolyInt &add);
   static bool assertSort(GCListWrapPolyInt &lst);
 
 public:
@@ -410,7 +411,8 @@ public:
   void algorithmTQ1();
   void algorithmBlockTQ();
   void build() {
-    algorithmTQ();
+    Allocator::setLimitMemory(size_t(6000)*1024*1024);
+    algorithmTQ1();
   }
 
   bool isOne() const { return mOneWrap; }

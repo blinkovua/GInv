@@ -49,8 +49,10 @@ class Integer {
     if (mMpz._mp_alloc < size) {
       if (mMpz._mp_alloc)
         mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
+//         delete[] mMpz._mp_d;
       mMpz._mp_alloc = size;
       mMpz._mp_d = new(mAllocator) mp_limb_t[mMpz._mp_alloc];
+//       mMpz._mp_d = new mp_limb_t[mMpz._mp_alloc];
     }
   }
 
@@ -86,6 +88,7 @@ public:
 #else
     if (mMpz._mp_alloc)
       mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
+//       delete[] mMpz._mp_d;
 #endif // GINV_UTIL_INTEGER_ALLOCATOR
   }
   Integer(Allocator* allocator, const char *str);
@@ -103,6 +106,7 @@ public:
 #else
     if (mMpz._mp_alloc)
       mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
+//       delete[] mMpz._mp_d;
 #endif // GINV_UTIL_INTEGER_ALLOCATOR
     mAllocator = a.mAllocator;
     mMpz._mp_alloc = a.mMpz._mp_alloc;

@@ -327,7 +327,9 @@ cdef class monom(const_monom):
   def zero(int size, int pos):
     assert size > 1 and pos >= -1
     r = monom()
+    print("aa")
     r.ptr = new Monom(r.allocator, size, pos)
+    print("aaaa")
     return r
   @staticmethod
   def variable(Variable v, int size, int pos):

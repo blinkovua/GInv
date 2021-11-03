@@ -623,10 +623,10 @@ void JanetPolyInt::prolong(WrapPolyInt *w) {
         ++mCritI;
         w->setBuild(i);
       }
-//       else if (d && m.degree() > w->ansector().lcm(d->ansector())) {
-//         ++mCritII;
-//         w->setBuild(i);
-//       }
+      else if (d && m.degree() > w->ansector().lcm(d->ansector())) {
+        ++mCritII;
+        w->setBuild(i);
+      }
       else
         insert(mQ, new WrapPolyInt(i, w));
     }  
@@ -659,6 +659,11 @@ void JanetPolyInt::insert(GCListWrapPolyInt &lst, WrapPolyInt *w) {
     ++j;
   j.insert(w);
 }
+
+void JanetPolyInt::merge(GCListWrapPolyInt &lst, GCListWrapPolyInt &add) {
+  
+}
+
 
 bool JanetPolyInt::assertSort(GCListWrapPolyInt &lst) {
   if (lst) {
@@ -892,6 +897,188 @@ std::cerr << "A" << std::endl;
   std::cerr << "Allocator::timer() - "<< Allocator::timer() << std::endl;
 }
 
+void JanetPolyInt::algorithmTQ1() {
+  if (mOneWrap)
+      return;
+
+  setPos();
+
+  int degPref=0;
+  int critI=0;
+  mTimer.start();
+  while(mQ) {
+    int size=mQ.head()->poly().size();
+    int order=mQ.head()->poly().order();
+
+    std::cerr << "1 mQ - " << mQ.length() << " mT - " << mT.length() << std::endl;
+
+    int deg=mQ.head()->poly().degree();
+    GCListWrapPolyInt::Iterator j(mQ.begin());
+    GCListWrapPolyInt tmp;
+//     while(j && j.data()->poly().lm().degree() <= deg) {
+    while(j) {
+      int r=j.data()->poly().nf(*this);
+      if (j.data()->poly().isZero()) {
+//         std::cerr << "1 =0" << std::endl;
+        delete j.data();
+      }
+      else {
+        if (j.data()->poly().degree() == 0) {
+          for(GCListWrapPolyInt::Iterator j(tmp.begin()); j; j.del())
+            delete j.data();
+
+          setOne(order, size);
+          std::cerr << "deg - 0" << *mOneWrap << std::endl;
+          break;
+        }
+        
+        if (r) {
+          mReduction += r;
+          j.data()->poly().pp();
+          j.data()->reallocate();
+        }
+        insert(tmp, j.data());
+//         std::cerr << "1 "<< j.data()->poly().lm()  << " " << j.data()->poly().length()
+//           << " " << j.data()->poly().norm() << std::endl;
+      }
+      j.del();
+    }
+    assert(assertSort(mQ));
+    assert(assertSort(tmp));
+    
+    if (mOneWrap)
+      break;
+
+    if (degPref == 0)
+      degPref = deg;
+    
+    if (!tmp)
+      continue;
+
+    WrapPolyInt *w=tmp.pop();
+    int r=w->poly().nfTail(*this);
+    if (r) {
+      mReduction += r;
+      w->poly().pp();
+      w->reallocate();
+    }
+    GCListWrapPolyInt::Iterator k(tmp.begin());
+    int maxEqualLm=1;
+    while(k && k.data()->poly().lm() == w->poly().lm()) {
+      ++maxEqualLm;
+      int r=k.data()->poly().nfTail(*this);
+      if (r) {
+        mReduction += r;
+        k.data()->poly().pp();
+        k.data()->reallocate();
+      }
+      if (k.data()->poly().norm() < w->poly().norm()) {
+        auto w1=w;
+        w = k.data();
+        k.data() = w1;
+      }
+      ++k;
+    }
+    if (mMaxEqualLm < maxEqualLm)
+      mMaxEqualLm = maxEqualLm;
+    if (maxEqualLm > 1) {
+      std::cerr << "maxEqualLm - " << maxEqualLm << std::endl;
+      k = tmp.begin();
+      while(k && k.data()->poly().lm() == w->poly().lm()) {
+        k.data()->poly().reduction(w->poly());
+        if (k.data()->poly().isZero()) {
+          delete k.data();
+          k.del();
+        }
+        else {
+          k.data()->poly().pp();
+          k.data()->reallocate();
+          ++k;
+        }
+      }
+      j = mQ.begin();
+      while(k) {
+        j.insert(k.data());
+        k.del();
+        ++j;
+      }
+      insert(mQ, w);
+      k = tmp.begin();
+      while(k) {
+        insert(mQ, k.data());
+        k.del();
+      }
+      assert(assertSort(mQ));
+      continue;
+    }
+
+    j = mQ.begin();
+    k = tmp.begin();
+    while(k) {
+      j.insert(k.data());
+      k.del();
+      ++j;
+    }
+    assert(assertSort(mQ));
+
+    w->update(w->poly().lm());
+    mJanet[w->lm().pos()+1].insert(w);
+
+//     if (degPref > deg) {
+//       delete[] mJanet;
+//       mJanet = new GCJanet[mPos+2];
+//       for(GCListWrapPolyInt::Iterator j(mT.begin()); j; j.del()) {
+//         j.data()->clearNM();
+//         mQ.push(j.data());
+//       }
+//     }
+    degPref = deg;
+
+
+    std::cerr << "2 mQ - " << mQ.length() << " mT - " << mT.length() 
+      << " " << w->lm()  << " " << w->poly().length()
+      << " " << w->poly().norm() << std::endl;
+
+
+    if (!mT)
+      mT.push(w);
+    else {
+      GCListWrapPolyInt::Iterator k(mT.begin());
+      while(k) {
+        if (w && w->poly().lm().deglex(k.data()->poly().lm()) < 0) {
+          k.insert(w);
+          w = nullptr;
+        }
+        int r=k.data()->poly().nfTail(*this);
+        if (r) {
+          mReduction += r;
+          k.data()->poly().pp();
+          k.data()->reallocate();
+        }
+        if (k.data()->lm().degree() <= deg)
+          prolong(k.data());
+        ++k;
+        if (w && !k ) {
+          k.insert(w);
+          w = nullptr;
+        }
+      }
+    }
+    assert(assertT());
+
+    std::cerr << "critI - " <<  mCritI << " critII - " <<  mCritII << 
+    " mQ - " << mQ.length() << " mT - " << mT.length() << std::endl;
+  }
+  mTimer.stop();
+  std::cerr << timer() << std::endl;
+
+  std::cerr << "Allocator::maxMemory() - "<< Allocator::maxMemory() << std::endl;
+  std::cerr << "Allocator::currMemory() - "<< Allocator::currMemory() << std::endl;
+  std::cerr << "Allocator::timer() - "<< Allocator::timer() << std::endl;
+  
+  std::cerr << "maxEqualLm() - "<< maxEqualLm() << std::endl;
+}
+
 void JanetPolyInt::algorithmTQ() {
   if (mOneWrap)
       return;
@@ -950,10 +1137,22 @@ void JanetPolyInt::algorithmTQ() {
       continue;
 
     WrapPolyInt *w=tmp.pop();
+//     int r=w->poly().nfTail(*this);
+//     if (r) {
+//       mReduction += r;
+//       w->poly().pp();
+//       w->reallocate();
+//     }
     GCListWrapPolyInt::Iterator k(tmp.begin());
     int maxEqualLm=1;
     while(k && k.data()->poly().lm() == w->poly().lm()) {
       ++maxEqualLm;
+//       int r=k.data()->poly().nfTail(*this);
+//       if (r) {
+//         mReduction += r;
+//         k.data()->poly().pp();
+//         k.data()->reallocate();
+//       }
       if (k.data()->poly().norm() < w->poly().norm()) {
         auto w1=w;
         w = k.data();
@@ -988,7 +1187,10 @@ void JanetPolyInt::algorithmTQ() {
     degPref = deg;
 
 
-    std::cerr << "2 mQ - " << mQ.length() << " mT - " << mT.length() << std::endl;
+    std::cerr << "2 mQ - " << mQ.length() << " mT - " << mT.length() 
+      << " " << w->lm()  << " " << w->poly().length()
+      << " " << w->poly().norm() << std::endl;
+
 
     if (!mT)
       mT.push(w);

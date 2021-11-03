@@ -31,17 +31,18 @@
 namespace GInv {
 
 class Allocator {
-  static size_t  sCurrMemory;
-  static size_t  sMaxMemory;
-  static Timer   sTimer;
+  static size_t  sCurrMemory;   // Текущая память
+  static size_t  sMaxMemory;    // Максимальная память
+  static size_t  sLimitMemory;  // Ограничение на максимальную память
+  static Timer   sTimer;        // Таймер GC
 
-  size_t         mAlloc=0;
-  size_t         mSize=0;
+  size_t         mAlloc=0;      // Выделенная память
+  size_t         mSize=0;       // Используемая память
 
 #ifdef GINV_UTIL_ALLOCATOR
   struct Node {
-    void* mPointer;
-    Node* mNext;
+    void* mPointer;             // Указатель на блок памяти
+    Node* mNext;                // Следующий блок памяти
 
     Node() = delete;
     Node(size_t size, Node* next=nullptr):
@@ -51,9 +52,9 @@ class Allocator {
     ~Node() { free(mPointer); }
   };
 
-  Node*  mRoot=nullptr;
-  size_t mNodeAlloc=0;
-  size_t mNodeSize=0;
+  Node*  mRoot=nullptr;         // Список блоков памяти
+  size_t mNodeAlloc=0;          // Выделенная память для последнего блока
+  size_t mNodeSize=0;           // Используемая память для последнего блока
 #endif // GINV_UTIL_ALLOCATOR
 
 public:
@@ -61,6 +62,9 @@ public:
   static void timerStop() { sTimer.stop(); }
 
 
+  static void setLimitMemory(size_t limitMemory) { 
+    sLimitMemory = limitMemory; 
+  }
   static size_t maxMemory() { return sMaxMemory; }
   static size_t currMemory() { return sCurrMemory; }
   static const Timer& timer() { return sTimer; }
@@ -71,25 +75,25 @@ public:
 
   void swap(Allocator& a);
 
-  void* allocate(size_t n);
-  void deallocate(const void* ptr, size_t n);
+  void* allocate(size_t n);                    // низкоуровневое выделение памяти
+  void deallocate(const void* ptr, size_t n);  // низкоуровневое освобождение памяти
 
   template <typename T>
-  inline void dealloc(const T *ptr) {
+  inline void dealloc(const T *ptr) {          // освобождение памяти
     deallocate(ptr, sizeof(T));
   }
   template <typename T>
-  inline void dealloc(const T *ptr, size_t n) {
+  inline void dealloc(const T *ptr, size_t n) {// освобождение памяти для массива
     assert(n > 0);
     deallocate(ptr, sizeof(T)*n);
   }
   template <typename T>
-  inline void destroy(const T *ptr) {
+  inline void destroy(const T *ptr) {          // освобождение памяти с вызовом деструктора
     ptr->~T();
     deallocate(ptr, sizeof(T));
   }
   template <typename T>
-  inline void destroy(const T *ptr, size_t n) {
+  inline void destroy(const T *ptr, size_t n) {// освобождение памяти с вызовом деструктора
     assert(n > 0);
     for(int i=0; i < n; i++)
       ptr[i].~T();
@@ -98,10 +102,16 @@ public:
 
   size_t alloc() const { return mAlloc; }
   size_t size() const { return mSize; }
-  bool isGC() const;
+#ifdef GINV_UTIL_ALLOCATOR
+  bool isGC() const {                          // чисто эмпирические соображения
+    return mAlloc > 4096 && 2*mAlloc > 3*mSize;
+  }
+#else
+  bool isGC() const { return false; } 
+#endif // GINV_UTIL_ALLOCATOR  
 };
 
-class AllocatorPtr {
+class AllocatorPtr { // Вспомогательный класс
   Allocator* mAllocator;
 
 public:

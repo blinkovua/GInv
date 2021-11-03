@@ -22,16 +22,20 @@
 
 namespace GInv {
 
+const size_t memoryPageSize=4096;   // размер страницы
+
 #ifdef GINV_UTIL_ALLOCATOR
-
-const size_t memoryPageSize=4096;
-
+  
 Allocator::Allocator(const Allocator& a) {
   mNodeAlloc = memoryPageSize;
   mAlloc = mNodeAlloc;
   mRoot = new Node(mNodeAlloc);
   sCurrMemory += mNodeAlloc;
   sMaxMemory = (sMaxMemory > sCurrMemory) ? sMaxMemory: sCurrMemory;
+  if (sLimitMemory > 0 && sMaxMemory > sLimitMemory) {
+    std::cerr << "memory limit exceeded - " << sLimitMemory << std::endl;
+    exit(EXIT_SUCCESS);
+  }
 }
 
 Allocator::~Allocator() {
@@ -40,7 +44,7 @@ Allocator::~Allocator() {
 
   assert(mSize == 0);
   sCurrMemory -= mAlloc;
-  while(mRoot) {
+  while(mRoot) {  // очистка списка блоков памяти
     Node *tmp = mRoot;
     mRoot = mRoot->mNext;
     delete tmp;
@@ -71,14 +75,18 @@ void Allocator::swap(Allocator& a) {
 
 void* Allocator::allocate(size_t n) {
   assert(n > 0);
-  n = ((n >> 6) + 1) << 6;
-  if (mNodeSize + n > mNodeAlloc) {
+  n = ((n >> 6) + 1) << 6;          // выравнивание по требуемой памяти
+  if (mNodeSize + n > mNodeAlloc) { // если памяти в текущем блоке мало
     mNodeAlloc = ((n + memoryPageSize) / memoryPageSize)*memoryPageSize;
     mAlloc += mNodeAlloc;
     mRoot = new Node(mNodeAlloc, mRoot);
     mNodeSize = 0;
     sCurrMemory += mNodeAlloc;
     sMaxMemory = (sMaxMemory >= sCurrMemory) ? sMaxMemory: sCurrMemory;
+    if (sLimitMemory > 0 && sMaxMemory > sLimitMemory) {
+      std::cerr << "memory limit exceeded - " << sLimitMemory << std::endl;
+      exit(EXIT_SUCCESS);
+    }
   }
   assert(mNodeSize + n <= mNodeAlloc);
   void *r=(char*)mRoot->mPointer + mNodeSize;
@@ -93,10 +101,6 @@ void Allocator::deallocate(const void*, size_t n) {
   n = ((n >> 6) + 1) << 6;
   assert(mSize >= n);
   mSize -= n;
-}
-
-bool Allocator::isGC() const {
-  return mAlloc > memoryPageSize && mAlloc > mSize*2;
 }
 
 #else
@@ -128,6 +132,10 @@ void* Allocator::allocate(size_t n) {
   mSize += full;
   sCurrMemory += full;
   sMaxMemory = (sMaxMemory > sCurrMemory) ? sMaxMemory: sCurrMemory;
+  if (sLimitMemory > 0 && sMaxMemory > sLimitMemory) {
+    std::cerr << "memory limit exceeded - " << sLimitMemory << std::endl;
+    exit(EXIT_SUCCESS);
+  }
   return malloc(n);
 }
 
@@ -140,14 +148,12 @@ void Allocator::deallocate(const void* ptr, size_t n) {
   free((void*)ptr);
 }
 
-bool Allocator::isGC() const {
-  return false;
-}
 
 #endif // GINV_UTIL_ALLOCATOR
 
 size_t Allocator::sCurrMemory = 0;
 size_t Allocator::sMaxMemory = 0;
+size_t Allocator::sLimitMemory = 0;
 Timer  Allocator::sTimer;
 
 }

@@ -290,7 +290,7 @@ int Monom::gcd(const Monom& a) const {
   assert(mPos == -1 || a.mPos == -1);
   int r=0;
   for(int i=0; i < mSize; i++)
-    r += (mVariables[i] >= a.mVariables[i]) ? mVariables[i]: a.mVariables[i];
+    r += (mVariables[i] <= a.mVariables[i]) ? mVariables[i]: a.mVariables[i];
   return r;
 }
 
@@ -299,7 +299,7 @@ int Monom::lcm(const Monom& a) const {
   assert(mPos == -1 || a.mPos == -1);
   int r=0;
   for(int i=0; i < mSize; i++)
-    r += (mVariables[i] <= a.mVariables[i]) ? mVariables[i]: a.mVariables[i];
+    r += (mVariables[i] >= a.mVariables[i]) ? mVariables[i]: a.mVariables[i];
   return r;
 
 }

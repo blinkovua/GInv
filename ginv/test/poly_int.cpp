@@ -32,6 +32,7 @@ class TestPolyInt: public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST(test3);
   CPPUNIT_TEST(test4);
   CPPUNIT_TEST(test5);
+//   CPPUNIT_TEST(test6);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -43,6 +44,7 @@ public:
   void test3();
   void test4();
   void test5();
+  void test6();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestPolyInt);
@@ -359,7 +361,120 @@ void TestPolyInt::test5() {
   for(int i=1; i < n; i++)
     q[6].mult(p[i]);
   q[6].sub("0x1");
+  std::cerr << q[6] << std::endl;
+
+
+  JanetPolyInt basis;
+  for(int i=0; i < n; i++)
+    basis.push(q[i]);
+
+  basis.build();
+  std::cerr << "size - " << basis.size() << std::endl;
+  basis.janet(-1).draw("pdf", "cyclic7.pdf");
+
+//   JanetPolyInt basis1;
+//   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
+//     basis1.push(k.data()->poly());
+//   basis1.build();
+//   std::cerr << "size - " << basis1.size() << std::endl;
+//   basis1.janet(-1).draw("pdf", "cyclic7a.pdf");
+}
+
+void TestPolyInt::test6() {
+  Allocator allocator[1];
+  const int n=8;
+
+  Monom v[]={
+    {allocator, 0, n, -1},
+    {allocator, 1, n, -1},
+    {allocator, 2, n, -1},
+    {allocator, 3, n, -1},
+    {allocator, 4, n, -1},
+    {allocator, 5, n, -1},
+    {allocator, 6, n, -1},
+    {allocator, 7, n, -1},
+  };
+
+  PolyInt p[]={
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[0]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[1]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[2]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[3]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[4]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[5]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[6]},
+    {allocator, PolyInt::TOP | PolyInt::deglex, v[7]},
+  };
+  PolyInt q[]={
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+    {allocator, PolyInt::TOP | PolyInt::deglex, n},
+  };
+
+  for(int i=0; i < n; i++)
+    q[0].add(p[i]);
+  std::cerr << q[0] << std::endl;
+  for(int i=0; i < n; i++) {
+    PolyInt tmp(allocator, p[i]);
+    tmp.mult(p[(i+1) % n]);
+    q[1].add(tmp);
+  }
+  std::cerr << q[1] << std::endl;
+  for(int i=0; i < n; i++) {
+    PolyInt tmp(allocator, p[i]);
+    tmp.mult(p[(i+1) % n]);
+    tmp.mult(p[(i+2) % n]);
+    q[2].add(tmp);
+  }
+  std::cerr << q[2] << std::endl;
+  for(int i=0; i < n; i++) {
+    PolyInt tmp(allocator, p[i]);
+    tmp.mult(p[(i+1) % n]);
+    tmp.mult(p[(i+2) % n]);
+    tmp.mult(p[(i+3) % n]);
+    q[3].add(tmp);
+  }
+  std::cerr << q[3] << std::endl;
+  for(int i=0; i < n; i++) {
+    PolyInt tmp(allocator, p[i]);
+    tmp.mult(p[(i+1) % n]);
+    tmp.mult(p[(i+2) % n]);
+    tmp.mult(p[(i+3) % n]);
+    tmp.mult(p[(i+4) % n]);
+    q[4].add(tmp);
+  }
+  std::cerr << q[4] << std::endl;
+  for(int i=0; i < n; i++) {
+    PolyInt tmp(allocator, p[i]);
+    tmp.mult(p[(i+1) % n]);
+    tmp.mult(p[(i+2) % n]);
+    tmp.mult(p[(i+3) % n]);
+    tmp.mult(p[(i+4) % n]);
+    tmp.mult(p[(i+5) % n]);
+    q[5].add(tmp);
+  }
   std::cerr << q[5] << std::endl;
+  for(int i=0; i < n; i++) {
+    PolyInt tmp(allocator, p[i]);
+    tmp.mult(p[(i+1) % n]);
+    tmp.mult(p[(i+2) % n]);
+    tmp.mult(p[(i+3) % n]);
+    tmp.mult(p[(i+4) % n]);
+    tmp.mult(p[(i+5) % n]);
+    tmp.mult(p[(i+6) % n]);
+    q[6].add(tmp);
+  }
+  std::cerr << q[6] << std::endl;
+  q[7].add(p[0]);
+  for(int i=1; i < n; i++)
+    q[7].mult(p[i]);
+  q[7].sub("0x1");
+  std::cerr << q[7] << std::endl;
 
 
   JanetPolyInt basis;

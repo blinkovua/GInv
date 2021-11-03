@@ -119,7 +119,7 @@ void Integer::div(const Integer& a, const Integer& b) {
 void Integer::gcd(const Integer& a) {
   Integer tmp(mAllocator);
 #ifdef GINV_UTIL_INTEGER_ALLOCATOR
-  tmp.reallocate(max(abs(mMpz._mp_size), abs(a.mMpz._mp_size)));
+  tmp.reallocate(min(abs(mMpz._mp_size), abs(a.mMpz._mp_size)));
 #endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_gcd(&tmp.mMpz, &mMpz, &a.mMpz);
   swap(tmp);
@@ -128,7 +128,7 @@ void Integer::gcd(const Integer& a) {
 void Integer::gcd(const Integer& a, const Integer& b) {
   assert(!a.isZero() && !b.isZero());
 #ifdef GINV_UTIL_INTEGER_ALLOCATOR
-  reallocate(max(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)));
+  reallocate(min(abs(a.mMpz._mp_size), abs(b.mMpz._mp_size)));
 #endif // GINV_UTIL_INTEGER_ALLOCATOR
   mpz_gcd(&mMpz, &a.mMpz, &b.mMpz);
 }
