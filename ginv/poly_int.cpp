@@ -915,8 +915,8 @@ void JanetPolyInt::algorithmTQ1() {
     int deg=mQ.head()->poly().degree();
     GCListWrapPolyInt::Iterator j(mQ.begin());
     GCListWrapPolyInt tmp;
-//     while(j && j.data()->poly().lm().degree() <= deg) {
-    while(j) {
+    while(j && j.data()->poly().lm().degree() <= deg) {
+//     while(j) {
       int r=j.data()->poly().nf(*this);
       if (j.data()->poly().isZero()) {
 //         std::cerr << "1 =0" << std::endl;

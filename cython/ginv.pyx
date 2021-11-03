@@ -327,9 +327,7 @@ cdef class monom(const_monom):
   def zero(int size, int pos):
     assert size > 1 and pos >= -1
     r = monom()
-    print("aa")
     r.ptr = new Monom(r.allocator, size, pos)
-    print("aaaa")
     return r
   @staticmethod
   def variable(Variable v, int size, int pos):
@@ -488,6 +486,20 @@ cdef class const_poly_int:
       return NotImplemented
     return r
 
+  def __radd__(self, other):
+    assert self.ptr
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
+    if isinstance(other, int):
+      assert self
+      (<PolyInt*>r.ptr).addI(hex(other).encode("utf-8"))
+    elif isinstance(other, const_poly_int):
+      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
+      (<PolyInt*>r.ptr).add((<const_poly_int>other).ptr[0])
+    else:
+      return NotImplemented
+    return r
+  
   def __sub__(const_poly_int self, other):
     assert self.ptr
     r = poly_int()
@@ -502,6 +514,20 @@ cdef class const_poly_int:
       return NotImplemented
     return r
 
+  def __rsub__(self, other):
+    assert self.ptr
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
+    if isinstance(other, int):
+      assert self
+      (<PolyInt*>r.ptr).subI(hex(other).encode("utf-8"))
+    elif isinstance(other, const_poly_int):
+      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
+      (<PolyInt*>r.ptr).sub((<const_poly_int>other).ptr[0])
+    else:
+      return NotImplemented
+    return r
+  
   def __mul__(const_poly_int self, other):
     assert self.ptr
     r = poly_int()
@@ -516,6 +542,20 @@ cdef class const_poly_int:
       return NotImplemented
     return r
 
+  def __rmul__(self, other):
+    assert self.ptr
+    r = poly_int()
+    r.ptr = new PolyInt(r.allocator, self.ptr[0])
+    if isinstance(other, int):
+      assert self
+      (<PolyInt*>r.ptr).multI(hex(other).encode("utf-8"))
+    elif isinstance(other, const_poly_int):
+      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
+      (<PolyInt*>r.ptr).mult((<const_poly_int>other).ptr[0])
+    else:
+      return NotImplemented
+    return r
+  
   def __pow__(const_poly_int self, int other, modulo):
     assert other >= 0
     r = poly_int()

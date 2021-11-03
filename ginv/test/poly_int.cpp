@@ -189,12 +189,12 @@ void TestPolyInt::test3() {
   std::cerr << "size - " << basis.size() << std::endl;
   basis.janet(-1).draw("pdf", "cyclic5.pdf");
 
-  JanetPolyInt basis1;
-  for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
-    basis1.push(k.data()->poly());
-  basis1.build();
-  std::cerr << "size - " << basis1.size() << std::endl;
-  basis1.janet(-1).draw("pdf", "cyclic5a.pdf");
+//   JanetPolyInt basis1;
+//   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
+//     basis1.push(k.data()->poly());
+//   basis1.build();
+//   std::cerr << "size - " << basis1.size() << std::endl;
+//   basis1.janet(-1).draw("pdf", "cyclic5a.pdf");
 }
 
 void TestPolyInt::test4() {
@@ -273,12 +273,12 @@ void TestPolyInt::test4() {
   std::cerr << "size - " << basis.size() << std::endl;
   basis.janet(-1).draw("pdf", "cyclic6.pdf");
 
-  JanetPolyInt basis1;
-  for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
-    basis1.push(k.data()->poly());
-  basis1.build();
-  std::cerr << "size - " << basis1.size() << std::endl;
-  basis1.janet(-1).draw("pdf", "cyclic6a.pdf");
+//   JanetPolyInt basis1;
+//   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
+//     basis1.push(k.data()->poly());
+//   basis1.build();
+//   std::cerr << "size - " << basis1.size() << std::endl;
+//   basis1.janet(-1).draw("pdf", "cyclic6a.pdf");
 }
 
 void TestPolyInt::test5() {
@@ -483,7 +483,7 @@ void TestPolyInt::test6() {
 
   basis.build();
   std::cerr << "size - " << basis.size() << std::endl;
-  basis.janet(-1).draw("pdf", "cyclic7.pdf");
+  basis.janet(-1).draw("pdf", "cyclic.pdf");
 
 //   JanetPolyInt basis1;
 //   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)

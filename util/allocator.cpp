@@ -45,7 +45,7 @@ Allocator::~Allocator() {
   assert(mSize == 0);
   sCurrMemory -= mAlloc;
   while(mRoot) {  // очистка списка блоков памяти
-    Node *tmp = mRoot;
+    auto *tmp = mRoot;
     mRoot = mRoot->mNext;
     delete tmp;
   }
@@ -75,7 +75,7 @@ void Allocator::swap(Allocator& a) {
 
 void* Allocator::allocate(size_t n) {
   assert(n > 0);
-  n = ((n >> 6) + 1) << 6;          // выравнивание по требуемой памяти
+  n = ((n >> 6) + 1) << 6;          // выравнивание для кеша
   if (mNodeSize + n > mNodeAlloc) { // если памяти в текущем блоке мало
     mNodeAlloc = ((n + memoryPageSize) / memoryPageSize)*memoryPageSize;
     mAlloc += mNodeAlloc;
@@ -98,7 +98,7 @@ void* Allocator::allocate(size_t n) {
 
 void Allocator::deallocate(const void*, size_t n) {
   assert(n > 0);
-  n = ((n >> 6) + 1) << 6;
+  n = ((n >> 6) + 1) << 6;          // выравнивание для кеша
   assert(mSize >= n);
   mSize -= n;
 }
