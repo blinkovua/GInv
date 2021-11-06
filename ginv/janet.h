@@ -22,7 +22,7 @@
 #define GINV_JANET_H
 
 #include "util/allocator.h"
-#include "util/list.h"
+#include "util/hilbertpoly.h"
 #include "monom.h"
 #include "wrap.h"
 
@@ -111,6 +111,7 @@ protected:
 
   static Link build(Link j, Allocator* allocator);
   static void clear(Link j, Allocator* allocator);
+  static void buildHP(Link j, HilbertPoly& hp, HilbertPoly& tmp);
 
 #ifdef GINV_GRAPHVIZ
   static Agnode_t* draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd);
@@ -141,6 +142,12 @@ public:
 
   Janet::ConstIterator begin() const { return mRoot; }
   int size() const { return mSize;}
+  void buildHP(HilbertPoly& hp) const {
+    assert(hp.dim() < 0);
+    assert(mRoot);
+    HilbertPoly tmp;
+    buildHP(mRoot, hp, tmp);
+  }
 
   const Wrap* find(const Monom &m) const;
   void insert(Wrap *wrap);
@@ -162,7 +169,10 @@ public:
     GVC_t *gvc=gvContext();
     Agraph_t *g=agopen((char*)"Janet",  Agdirected, (Agdisc_t*)nullptr);
     std::stringstream ss;
-    ss << "#Janet = " << size();
+    ss << "#Janet = " << size() << std::endl;
+    HilbertPoly hp;
+    buildHP(hp);
+    ss << "#HP = " << hp;
     agnode(g, (char*)ss.str().c_str(), 1);
     if (mRoot)
       draw(g, mRoot, 0, false);

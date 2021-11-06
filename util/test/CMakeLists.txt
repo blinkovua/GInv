@@ -7,6 +7,7 @@ ADD_EXECUTABLE(unittest
   rbtree.cpp
   randpermutation.cpp
   integer.cpp
+  hilbertpoly.cpp
 )
 
 TARGET_LINK_LIBRARIES(unittest

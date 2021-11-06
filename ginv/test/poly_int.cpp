@@ -30,8 +30,8 @@ class TestPolyInt: public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST(test1);
   CPPUNIT_TEST(test2);
   CPPUNIT_TEST(test3);
-  CPPUNIT_TEST(test4);
-  CPPUNIT_TEST(test5);
+//   CPPUNIT_TEST(test4);
+//   CPPUNIT_TEST(test5);
 //   CPPUNIT_TEST(test6);
   CPPUNIT_TEST_SUITE_END();
 
@@ -188,7 +188,16 @@ void TestPolyInt::test3() {
   basis.build();
   std::cerr << "size - " << basis.size() << std::endl;
   basis.janet(-1).draw("pdf", "cyclic5.pdf");
-
+  
+//   std::cerr << std::endl;
+//   for(GCListWrapPolyInt::ConstIterator j(basis.begin()); j; ++j) {
+//     std::cerr << j.data()->multi() - j.data()->lm().degree() << ", ";
+//   }
+//   std::cerr << std::endl;
+//   for(GCListWrapPolyInt::ConstIterator j(basis.begin()); j; ++j) {
+//     std::cerr << j.data()->multi() << ", ";
+//   }
+//   std::cerr << std::endl;
 //   JanetPolyInt basis1;
 //   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
 //     basis1.push(k.data()->poly());
@@ -273,6 +282,15 @@ void TestPolyInt::test4() {
   std::cerr << "size - " << basis.size() << std::endl;
   basis.janet(-1).draw("pdf", "cyclic6.pdf");
 
+  std::cerr << std::endl;
+  for(GCListWrapPolyInt::ConstIterator j(basis.begin()); j; ++j) {
+    std::cerr << j.data()->multi() - j.data()->lm().degree() << ", ";
+  }
+  std::cerr << std::endl;
+  for(GCListWrapPolyInt::ConstIterator j(basis.begin()); j; ++j) {
+    std::cerr << j.data()->multi() << ", ";
+  }
+  std::cerr << std::endl;  
 //   JanetPolyInt basis1;
 //   for(GCListWrapPolyInt::ConstIterator k(basis.begin()); k; ++k)
 //     basis1.push(k.data()->poly());

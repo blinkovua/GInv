@@ -30,13 +30,18 @@
 namespace GInv {
 
 class HilbertPoly {
-  static size_t buffer_size;
-  static char*  buffer;
+  static size_t sBufferSize;
+  static char*  sBuffer;
 
   int              mDim;
   __mpq_struct*    mCoeff;
 
 public:
+  HilbertPoly():
+      mDim(0),
+      mCoeff(nullptr) {
+  }
+  HilbertPoly(const HilbertPoly &a)=delete;
   HilbertPoly(int dim):
       mDim(dim+1),
       mCoeff(new __mpq_struct[mDim]) {
@@ -49,18 +54,27 @@ public:
     delete[] mCoeff;
   }
 
-  int dim() const { return mDim-1; }
-  const __mpq_struct* operator[](int k) const {
-    assert(0 <= k && k <= mDim);
-    return mCoeff + k;
+  void setDim(int dim) {
+    assert(mCoeff == nullptr);
+    mDim = dim + 1;
+    mCoeff = new __mpq_struct[mDim];
+    for(int k = 0; k < mDim; k++)
+      mpq_init(mCoeff + k);
   }
-  const char* numer(int k) const;
-  const char* denom(int k) const;
+
+  int dim() const { return mDim-1; }
+  bool isZero(int k) const {
+    assert(0 <= k && k <= mDim);
+    return mpq_numref(mCoeff + k)->_mp_size == 0;
+  }
+  const char* operator[](int k) const;
 
   void add(const HilbertPoly& a);
   void sub(const HilbertPoly& a);
   void mult(int a);
   void binomial(long int a, unsigned long b);
+  
+  friend std::ostream& operator<<(std::ostream& out, const HilbertPoly &a);
 };
 
 }

@@ -111,6 +111,27 @@ void Janet::clear(Link j, Allocator* allocator) {
   }
 }
 
+void Janet::buildHP(Link j, HilbertPoly& hp, HilbertPoly& tmp) {
+  assert(j);
+  while(j) {
+    if (j->mWrap) {
+      if (hp.dim() < 0) {
+        int d=j->mWrap->lm().size();
+        hp.setDim(d);
+        hp.binomial(d, d);
+        tmp.setDim(d);
+      }
+      int m=j->mWrap->multi();
+      tmp.binomial(m - j->mWrap->lm().degree(), m);
+      hp.sub(tmp);
+    }
+    if (j->mNextVar)
+      buildHP(j->mNextVar, hp, tmp);
+    j = j->mNextDeg;
+  }
+}
+
+
 #ifdef GINV_GRAPHVIZ
 Agnode_t* Janet::draw(Agraph_t *g, Link j, Monom::Variable var, bool NMd) {
   std::stringstream ss;

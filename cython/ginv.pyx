@@ -46,6 +46,7 @@ cdef extern from "allocator.h" namespace "GInv":
 
   cdef size_t allocator_maxMemory "GInv::Allocator::maxMemory"()
   cdef size_t allocator_currMemory "GInv::Allocator::currMemory"()
+  cdef void set_limit_memory "GInv::Allocator::setLimitMemory"(size_t limitMemory)
   cdef const Timer& allocator_timer "GInv::Allocator::timer"()
 
 cdef class const_timer_GC:
@@ -96,8 +97,14 @@ cdef class allocator:
   def currMemory():
     return allocator_currMemory()
   @staticmethod
+  def set_limit_memory(limitMemory):
+    return set_limit_memory(limitMemory)
+  @staticmethod
   def GC_timer():
     return const_timer_GC()
+  
+  
+  
 
   def alloc(self):
     return self.allocator.alloc()
@@ -472,7 +479,7 @@ cdef class const_poly_int:
     (<PolyInt*>r.ptr).minus()
     return r
 
-  def __add__(const_poly_int self, other):
+  def add(const_poly_int self, other):
     assert self.ptr
     r = poly_int()
     r.ptr = new PolyInt(r.allocator, self.ptr[0])
@@ -486,21 +493,13 @@ cdef class const_poly_int:
       return NotImplemented
     return r
 
-  def __radd__(self, other):
-    assert self.ptr
-    r = poly_int()
-    r.ptr = new PolyInt(r.allocator, self.ptr[0])
-    if isinstance(other, int):
-      assert self
-      (<PolyInt*>r.ptr).addI(hex(other).encode("utf-8"))
-    elif isinstance(other, const_poly_int):
-      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
-      (<PolyInt*>r.ptr).add((<const_poly_int>other).ptr[0])
+  def __add__(self, other):
+    if isinstance(other, const_poly_int):
+      return other.add(self)
     else:
-      return NotImplemented
-    return r
-  
-  def __sub__(const_poly_int self, other):
+      return self.add(other)
+
+  def sub(const_poly_int self, other):
     assert self.ptr
     r = poly_int()
     r.ptr = new PolyInt(r.allocator, self.ptr[0])
@@ -514,21 +513,13 @@ cdef class const_poly_int:
       return NotImplemented
     return r
 
-  def __rsub__(self, other):
-    assert self.ptr
-    r = poly_int()
-    r.ptr = new PolyInt(r.allocator, self.ptr[0])
-    if isinstance(other, int):
-      assert self
-      (<PolyInt*>r.ptr).subI(hex(other).encode("utf-8"))
-    elif isinstance(other, const_poly_int):
-      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
-      (<PolyInt*>r.ptr).sub((<const_poly_int>other).ptr[0])
+  def __sub__(self, other):
+    if isinstance(other, const_poly_int):
+      return -other.sub(self)
     else:
-      return NotImplemented
-    return r
-  
-  def __mul__(const_poly_int self, other):
+      return self.add(other)
+
+  def mul(const_poly_int self, other):
     assert self.ptr
     r = poly_int()
     r.ptr = new PolyInt(r.allocator, self.ptr[0])
@@ -542,19 +533,11 @@ cdef class const_poly_int:
       return NotImplemented
     return r
 
-  def __rmul__(self, other):
-    assert self.ptr
-    r = poly_int()
-    r.ptr = new PolyInt(r.allocator, self.ptr[0])
-    if isinstance(other, int):
-      assert self
-      (<PolyInt*>r.ptr).multI(hex(other).encode("utf-8"))
-    elif isinstance(other, const_poly_int):
-      assert (<const_poly_int>other).ptr and self.ptr.comparable((<const_poly_int>other).ptr[0])
-      (<PolyInt*>r.ptr).mult((<const_poly_int>other).ptr[0])
+  def __mul__(self, other):
+    if isinstance(other, const_poly_int):
+      return other.mul(self)
     else:
-      return NotImplemented
-    return r
+      return self.mul(other)
   
   def __pow__(const_poly_int self, int other, modulo):
     assert other >= 0
@@ -645,9 +628,17 @@ cdef class wrap_poly_int:
     return "%s%s[%s]" % (self.lm(), self.ansector(),\
         "".join("*" if self.ptr.NM(var) else " " for 0 <= var < self.ptr.lm().size()))
 
+cdef extern from "hilbertpoly.h" namespace "GInv":
+  cdef cppclass HilbertPoly:
+    HilbertPoly()
+    int dim() const
+    bool isZero(int k)
+    const char* get "operator[]"(int k) const;
+     
 cdef extern from "janet.h" namespace "GInv":
-   cdef cppclass Janet:
+  cdef cppclass Janet:
      int size() const
+     void buildHP(HilbertPoly& hp) const
      void draw(const char* format, const char* filename) const
 
 cdef class const_janet:
@@ -656,8 +647,19 @@ cdef class const_janet:
     self.ptr = NULL
 
   def size(self):
+    assert self.ptr
     return self.ptr.size()
+  def HilbertPoly(self):
+    cdef HilbertPoly hp
+    cdef int i
+    assert self.ptr
+    self.ptr.buildHP(hp)
+    r = []
+    for i in range(hp.dim()+1):
+      r.append(hp.get(i).decode("utf-8"))
+    return r
   def draw(self, format, filename):
+    assert self.ptr
     self.ptr.draw(format.encode("utf-8"), filename.encode("utf-8"))
     
 cdef extern from "poly_int.h" namespace "GInv":
@@ -683,6 +685,11 @@ cdef extern from "poly_int.h" namespace "GInv":
 
     const Timer& timer() const
     int reduction() const
+    int maxEqualLm() const
+    int critI() const
+    int critII() const
+    int isZeroNf() const
+
 
 cdef class janet_poly_int:
   cdef JanetPolyInt *ptr
@@ -751,8 +758,15 @@ cdef class janet_poly_int:
     return r
   def reduction(self):
     return self.ptr.reduction()
-
-
+  def maxEqualLm(self):
+    return self.ptr.maxEqualLm()
+  def critI(self):
+    return self.ptr.critI()
+  def critII(self):
+    return self.ptr.critII()
+  def isZeroNf(self):
+    return self.ptr.isZeroNf()
+    
   #def janet(self, int pos):
     #assert -1 <= pos <= self.ptr.maxPos()
     #r = janet_poly_int()

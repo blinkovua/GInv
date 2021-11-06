@@ -919,6 +919,7 @@ void JanetPolyInt::algorithmTQ1() {
 //     while(j) {
       int r=j.data()->poly().nf(*this);
       if (j.data()->poly().isZero()) {
+        ++mIsZeroNf;
 //         std::cerr << "1 =0" << std::endl;
         delete j.data();
       }
@@ -987,6 +988,7 @@ void JanetPolyInt::algorithmTQ1() {
       while(k && k.data()->poly().lm() == w->poly().lm()) {
         k.data()->poly().reduction(w->poly());
         if (k.data()->poly().isZero()) {
+          ++mIsZeroNf;
           delete k.data();
           k.del();
         }

@@ -99,7 +99,7 @@ public:
   int multi() const {
     int sum=0;
     for(int i=0; i < mLm.size(); i++)
-      if (mNM[i])
+      if (!mNM[i])
         ++sum;
     return sum;
   }

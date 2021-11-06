@@ -362,6 +362,7 @@ class JanetPolyInt {
   int                  mMaxEqualLm;
   int                  mCritI;
   int                  mCritII;
+  int                  mIsZeroNf;
   
   void setPos();
   void setOne(int order, int size);
@@ -383,7 +384,8 @@ public:
       mReduction(0),
       mMaxEqualLm(0),
       mCritI(0),
-      mCritII(0) {
+      mCritII(0),
+      mIsZeroNf(0) {
   }
   ~JanetPolyInt() {
     delete mOneWrap;
@@ -445,6 +447,9 @@ public:
   const Timer& timer() const { return mTimer; }
   int reduction() const { return mReduction; }
   int maxEqualLm() const { return mMaxEqualLm; }
+  int critI() const { return mCritI; }
+  int critII() const { return mCritII; }
+  int isZeroNf() const { return mIsZeroNf; }
 };
 
 }

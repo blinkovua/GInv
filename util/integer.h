@@ -31,9 +31,11 @@
 namespace GInv {
 
 class Integer {
-  static size_t buffer_size;
-  static char*  buffer;
+  static size_t sBufferSize;
+  static char*  sBuffer;
 
+#ifdef GINV_UTIL_INTEGER_ALLOCATOR  
+  
   static inline int abs(int a) {
     return (a >= 0) ? a: -a;
   }
@@ -44,17 +46,7 @@ class Integer {
     return (a >= b) ? b: a;
   }
 
-  void reallocate(int size) {
-    assert(size > 0);
-    if (mMpz._mp_alloc < size) {
-      if (mMpz._mp_alloc)
-        mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
-//         delete[] mMpz._mp_d;
-      mMpz._mp_alloc = size;
-      mMpz._mp_d = new(mAllocator) mp_limb_t[mMpz._mp_alloc];
-//       mMpz._mp_d = new mp_limb_t[mMpz._mp_alloc];
-    }
-  }
+  void reallocate(int size);
 
 protected:
   Allocator*   mAllocator;
@@ -77,21 +69,15 @@ public:
   Integer(Allocator* allocator, const Integer &a):
       mAllocator(allocator) {
     mpz_init(&mMpz);
-#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(abs(a.mMpz._mp_size));
-#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set(&mMpz, &a.mMpz);
   }
+  Integer(Allocator* allocator, const char *str);
   ~Integer() {
-#ifndef GINV_UTIL_INTEGER_ALLOCATOR
-    mpz_clear(&mMpz);
-#else
     if (mMpz._mp_alloc)
       mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
 //       delete[] mMpz._mp_d;
-#endif // GINV_UTIL_INTEGER_ALLOCATOR
   }
-  Integer(Allocator* allocator, const char *str);
 
   void swap(Integer& a) {
     assert(this != &a);
@@ -101,13 +87,9 @@ public:
     mpz_swap(&mMpz, &a.mMpz);
   }
   void operator=(Integer&& a) {
-#ifndef GINV_UTIL_INTEGER_ALLOCATOR
-    mpz_clear(&mMpz);
-#else
     if (mMpz._mp_alloc)
       mAllocator->dealloc(mMpz._mp_d, mMpz._mp_alloc);
 //       delete[] mMpz._mp_d;
-#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mAllocator = a.mAllocator;
     mMpz._mp_alloc = a.mMpz._mp_alloc;
     mMpz._mp_size = a.mMpz._mp_size;
@@ -116,21 +98,15 @@ public:
     a.mMpz._mp_alloc = 0;
   }
   void operator=(const Integer& a) {
-#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(abs(a.mMpz._mp_size));
-#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set(&mMpz, &a.mMpz);
   }
   void set_si(signed long a) {
-#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(1);
-#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set_si(&mMpz, a);
   }
   void set_ui(unsigned long a) {
-#ifdef GINV_UTIL_INTEGER_ALLOCATOR
     reallocate(1);
-#endif // GINV_UTIL_INTEGER_ALLOCATOR
     mpz_set_ui(&mMpz, a);
   }
 
@@ -154,7 +130,105 @@ public:
   void div(const Integer& a, const Integer& b);
   void gcd(const Integer& a);
   void gcd(const Integer& a, const Integer& b);
-  void pow(const Integer& a, unsigned long n);
+  
+#else  
+
+protected:
+  __mpz_struct mMpz;
+
+public:
+  Integer()=delete;
+  explicit Integer(Allocator*) { mpz_init(&mMpz); }
+  Integer(const Integer &a)=delete;
+  Integer(Integer &&a) {
+    mMpz._mp_alloc = a.mMpz._mp_alloc;
+    mMpz._mp_size = a.mMpz._mp_size;
+    mMpz._mp_d = a.mMpz._mp_d;
+    a.mMpz._mp_alloc = 0;
+  }
+  Integer(Allocator*, const Integer &a){
+    mpz_init(&mMpz);
+    mpz_init_set(&mMpz, &a.mMpz);
+  }
+  Integer(Allocator* allocator, const char *str) {
+    mpz_init(&mMpz);
+    int r=mpz_set_str(&mMpz, str, 0);
+    assert(r == 0);
+  }
+  ~Integer() { mpz_clear(&mMpz); }
+
+  void swap(Integer& a) {
+    assert(this != &a);
+    mpz_swap(&mMpz, &a.mMpz);
+  }
+  void operator=(Integer&& a) {
+    mpz_set(&mMpz, &a.mMpz);
+    mMpz._mp_alloc = a.mMpz._mp_alloc;
+    mMpz._mp_size = a.mMpz._mp_size;
+    mMpz._mp_d = a.mMpz._mp_d;
+
+    a.mMpz._mp_alloc = 0;
+  }
+  void operator=(const Integer& a) { mpz_set(&mMpz, &a.mMpz); }
+  void set_si(signed long a) { mpz_set_si(&mMpz, a); }
+  void set_ui(unsigned long a) { mpz_set_ui(&mMpz, a); }
+
+  bool isZero() const { return mpz_sgn(&mMpz) == 0; }
+  bool isOne() const { return mpz_cmp_ui(&mMpz, 1ul) == 0; }
+  bool isAbsOne() const { return  mpz_cmpabs_ui(&mMpz, 1ul) == 0; }
+  int sgn() const { return mpz_sgn(&mMpz); }
+  int norm() const { return abs(mMpz._mp_size); }
+
+  void set_neg() { mMpz._mp_size *= -1; }
+  void add(const Integer& a) {
+    mpz_add(&mMpz, &mMpz, &a.mMpz);
+  }
+  void add(const Integer& a, const Integer& b) {
+    assert(this != &a);
+    assert(this != &b);
+    mpz_add(&mMpz, &a.mMpz, &b.mMpz);
+  }
+  void sub(const Integer& a) {
+    mpz_sub(&mMpz, &mMpz, &a.mMpz);
+  }
+  void sub(const Integer& a, const Integer& b) {
+    assert(this != &a);
+    assert(this != &b);
+    mpz_sub(&mMpz, &a.mMpz, &b.mMpz);
+  }
+  void mult(const Integer& a) {
+    mpz_mul(&mMpz, &mMpz, &a.mMpz);
+  }
+  void mult(const Integer& a, const Integer& b) {
+    assert(this != &a);
+    assert(this != &b);
+    mpz_mul(&mMpz, &a.mMpz, &b.mMpz);
+  }
+  bool divisible(const Integer& a) const {
+    return  mpz_divisible_p (&mMpz, &a.mMpz) != 0;
+  }
+  void div(const Integer& a) {
+    assert(divisible(a));
+    mpz_divexact(&mMpz, &mMpz, &a.mMpz);
+  }
+  void div(const Integer& a, const Integer& b) {
+    assert(this != &a);
+    assert(this != &b);
+    assert(a.divisible(b));
+    mpz_divexact(&mMpz, &a.mMpz, &b.mMpz);
+  }
+  void gcd(const Integer& a) {
+    assert(!isZero() && !a.isZero());
+    mpz_gcd(&mMpz, &mMpz, &a.mMpz);
+  }
+  void gcd(const Integer& a, const Integer& b) {
+    assert(this != &a);
+    assert(this != &b);
+    assert(!a.isZero() && !b.isZero());
+    mpz_gcd(&mMpz, &a.mMpz, &b.mMpz);
+  }
+  
+#endif // GINV_UTIL_INTEGER_ALLOCATOR
 
   const char* get_str(int base) const;
 };
