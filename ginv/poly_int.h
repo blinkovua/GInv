@@ -162,11 +162,11 @@ public:
     assert(mHead);
     return mHead.head()->mMonom.degree();
   }
-//   int cmp(const PolyInt& a) const {
-//     assert(mHead);
-//     assert(a.mHead);
-//     return mCmp1(lm(), a.lm());
-//   }
+  int cmp(const PolyInt& a) const {
+    assert(mHead);
+    assert(a.mHead);
+    return mCmp1(lm(), a.lm());
+  }
   int norm() const;
   const Monom& lm() const {
     assert(mHead);
@@ -363,12 +363,12 @@ class JanetPolyInt {
   int                  mCritI;
   int                  mCritII;
   int                  mIsZeroNf;
-  
+
   void setPos();
   void setOne(int order, int size);
   void prolong(WrapPolyInt *w);
   bool assertT() const;
-  
+
   static void insert(GCListWrapPolyInt &lst, WrapPolyInt *w);
   static void merge(GCListWrapPolyInt &lst, GCListWrapPolyInt &add);
   static bool assertSort(GCListWrapPolyInt &lst);
@@ -411,10 +411,10 @@ public:
 
   void algorithmTQ();
   void algorithmTQ1();
+  void algorithmTQ2();
   void algorithmBlockTQ();
   void build() {
-    Allocator::setLimitMemory(size_t(6000)*1024*1024);
-    algorithmTQ1();
+    algorithmTQ2();
   }
 
   bool isOne() const { return mOneWrap; }
@@ -443,6 +443,7 @@ public:
     assert(-1 <= pos && pos <= mPos);
     return mJanet[pos+1];
   }
+  void buildHP(HilbertPoly& hp) const;
 
   const Timer& timer() const { return mTimer; }
   int reduction() const { return mReduction; }

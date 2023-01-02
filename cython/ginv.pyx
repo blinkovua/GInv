@@ -102,9 +102,9 @@ cdef class allocator:
   @staticmethod
   def GC_timer():
     return const_timer_GC()
-  
-  
-  
+
+
+
 
   def alloc(self):
     return self.allocator.alloc()
@@ -519,7 +519,7 @@ cdef class const_poly_int:
     else:
       return self.add(other)
 
-  def mul(const_poly_int self, other):
+  def mul(const_poly_int self, other): #TODO
     assert self.ptr
     r = poly_int()
     r.ptr = new PolyInt(r.allocator, self.ptr[0])
@@ -538,7 +538,7 @@ cdef class const_poly_int:
       return other.mul(self)
     else:
       return self.mul(other)
-  
+
   def __pow__(const_poly_int self, int other, modulo):
     assert other >= 0
     r = poly_int()
@@ -603,7 +603,7 @@ cdef class wrap_poly_int:
   cdef const WrapPolyInt *ptr
   def __cinit__(self, ):
     self.ptr = NULL
-    
+
   def lm(self):
     r = const_monom()
     r.ptr = &self.ptr.lm()
@@ -634,7 +634,7 @@ cdef extern from "hilbertpoly.h" namespace "GInv":
     int dim() const
     bool isZero(int k)
     const char* get "operator[]"(int k) const;
-     
+
 cdef extern from "janet.h" namespace "GInv":
   cdef cppclass Janet:
      int size() const
@@ -661,7 +661,7 @@ cdef class const_janet:
   def draw(self, format, filename):
     assert self.ptr
     self.ptr.draw(format.encode("utf-8"), filename.encode("utf-8"))
-    
+
 cdef extern from "poly_int.h" namespace "GInv":
   cdef cppclass GCListWrapPolyIntConstIterator "GInv::GCListWrapPolyInt::ConstIterator":
     WrapPolyInt* data() const
@@ -682,6 +682,7 @@ cdef extern from "poly_int.h" namespace "GInv":
     void nf(PolyInt& a) const
     int maxPos() const
     const Janet& janet(int pos)
+    void buildHP(HilbertPoly& hp) const
 
     const Timer& timer() const
     int reduction() const
@@ -697,7 +698,6 @@ cdef class janet_poly_int:
     self.ptr = new JanetPolyInt()
   def __dealloc__(self):
     del self.ptr
-
 
   def __nonzero__(self):
     assert self.ptr
@@ -725,7 +725,7 @@ cdef class janet_poly_int:
 
   def build(self):
     self.ptr.build()
-    
+
   def isOne(self):
     return self.ptr.isOne()
 
@@ -743,13 +743,25 @@ cdef class janet_poly_int:
     self.ptr.comparable(p.ptr[0])
     self.ptr.nf((<PolyInt *>p.ptr)[0])
     return p
-    
+
   def maxPos(self):
     return self.ptr.maxPos()
   def janet(self, pos):
     assert -1 <= pos <= self.ptr.maxPos()
     r = const_janet()
     r.ptr = &self.ptr.janet(pos)
+    return r
+
+  def HilbertPoly(self):
+    assert not self.ptr.isOne()
+    assert self.ptr.size() > 0
+    cdef HilbertPoly hp
+    cdef int i
+    assert self.ptr
+    self.ptr.buildHP(hp)
+    r = []
+    for i in range(hp.dim()+1):
+      r.append(hp.get(i).decode("utf-8"))
     return r
 
   def timer(self):
@@ -766,13 +778,13 @@ cdef class janet_poly_int:
     return self.ptr.critII()
   def isZeroNf(self):
     return self.ptr.isZeroNf()
-    
+
   #def janet(self, int pos):
     #assert -1 <= pos <= self.ptr.maxPos()
     #r = janet_poly_int()
     #r.ptr = &self.ptr.janet(pos)
     #return r
-    
+
   #def lm(self):
     #r = const_monom()
     #r.ptr = &self.ptr.lm()
