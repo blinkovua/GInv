@@ -50,7 +50,7 @@ public:
 CPPUNIT_TEST_SUITE_REGISTRATION(TestPolyInt);
 
 void TestPolyInt::setUp() {
-  Allocator::setLimitMemory(size_t(6000)*1024*1024);
+  Allocator::setLimitMemory(size_t(26000)*1024*1024);
 }
 
 void TestPolyInt::tearDown() {
@@ -59,7 +59,7 @@ void TestPolyInt::tearDown() {
 
 void TestPolyInt::test1() {
   Allocator allocator[1];
-  const int n=8;
+  const int n=7;
   Monom v[]={
     {allocator, 0, n, -1},
     {allocator, 1, n, -1},

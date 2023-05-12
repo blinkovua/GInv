@@ -45,11 +45,12 @@ class Allocator {
     Node* mNext;                // Следующий блок памяти
 
     Node() = delete;
-    Node(size_t size, Node* next=nullptr):
-        mPointer(malloc(size)),
+    inline Node(size_t size, Node* next=nullptr):
+        // mPointer(malloc(size)),
+        mPointer(aligned_alloc(16, size)),
         mNext(next) {
     }
-    ~Node() { free(mPointer); }
+    inline ~Node() { free(mPointer); }
   };
 
   Node*  mRoot=nullptr;         // Список блоков памяти
@@ -58,18 +59,18 @@ class Allocator {
 #endif // GINV_UTIL_ALLOCATOR
 
 public:
-  static void timerCont() { sTimer.cont(); }
-  static void timerStop() { sTimer.stop(); }
+  inline static void timerCont() { sTimer.cont(); }
+  inline static void timerStop() { sTimer.stop(); }
 
 
-  static void setLimitMemory(size_t limitMemory) { 
+  inline static void setLimitMemory(size_t limitMemory) {
     sLimitMemory = limitMemory; 
   }
-  static size_t maxMemory() { return sMaxMemory; }
-  static size_t currMemory() { return sCurrMemory; }
-  static const Timer& timer() { return sTimer; }
+  inline static size_t maxMemory() { return sMaxMemory; }
+  inline static size_t currMemory() { return sCurrMemory; }
+  inline static const Timer& timer() { return sTimer; }
 
-  Allocator() {}
+  inline Allocator() {}
   Allocator(const Allocator& a);
   ~Allocator();
 
@@ -100,14 +101,14 @@ public:
     deallocate(ptr, sizeof(size_t) + sizeof(T)*n);
   }
 
-  size_t alloc() const { return mAlloc; }
-  size_t size() const { return mSize; }
+  inline size_t alloc() const { return mAlloc; }
+  inline size_t size() const { return mSize; }
 #ifdef GINV_UTIL_ALLOCATOR
-  bool isGC() const {                          // чисто эмпирические соображения
+  inline bool isGC() const {                          // чисто эмпирические соображения
     return mAlloc > 4096 && 2*mAlloc > 3*mSize;
   }
 #else
-  bool isGC() const { return false; } 
+  inline bool isGC() const { return false; }
 #endif // GINV_UTIL_ALLOCATOR  
 };
 
@@ -115,16 +116,16 @@ class AllocatorPtr { // Вспомогательный класс
   Allocator* mAllocator;
 
 public:
-  AllocatorPtr():
+  inline AllocatorPtr():
       mAllocator(new Allocator) {
   }
-  AllocatorPtr(const AllocatorPtr& a)=delete;
-  ~AllocatorPtr() { delete mAllocator; }
+  inline AllocatorPtr(const AllocatorPtr& a)=delete;
+  inline ~AllocatorPtr() { delete mAllocator; }
 
-  const Allocator* allocator() const { return mAllocator; }
-  Allocator* allocator() { return mAllocator; }
+  inline const Allocator* allocator() const { return mAllocator; }
+  inline Allocator* allocator() { return mAllocator; }
 
-  void swap(AllocatorPtr& a) {
+  inline void swap(AllocatorPtr& a) {
     auto tmp=mAllocator;
     mAllocator = a.mAllocator;
     a.mAllocator = tmp;
@@ -134,31 +135,31 @@ public:
 template <typename T>
 class GC: protected AllocatorPtr, public T {
 public:
-  GC():
+  inline GC():
       AllocatorPtr(),
       T(allocator()) {
   }
-  GC(const GC &a):
+  inline GC(const GC &a):
       AllocatorPtr(),
       T(allocator(), a) {
   }
-  GC(const T &a):
+  inline GC(const T &a):
       AllocatorPtr(),
       T(allocator(), a) {
   }
-  ~GC() {}
+  inline ~GC() {}
 
-  void operator=(const GC &a) {
+  inline void operator=(const GC &a) {
     assert(this != &a);
     T::operator=(a);
   }
 
-  void swap(GC &a) {
+  inline void swap(GC &a) {
     AllocatorPtr::swap(a);
     T::swap(a);
   }
 
-  void reallocate() {
+  inline void reallocate() {
 #ifdef GINV_UTIL_ALLOCATOR
     if (allocator()->isGC()) {
       Allocator::timerCont();
@@ -168,9 +169,9 @@ public:
     }
 #endif // GINV_UTIL_ALLOCATOR
   }
-  size_t alloc() const { return allocator()->alloc(); }
-  size_t size() const { return allocator()->size(); }
-  bool isGC() const { return allocator()->isGC(); }
+  inline size_t alloc() const { return allocator()->alloc(); }
+  inline size_t size() const { return allocator()->size(); }
+  inline bool isGC() const { return allocator()->isGC(); }
 };
 
 }

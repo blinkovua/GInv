@@ -18,11 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <unistd.h>
+
 #include "allocator.h"
 
 namespace GInv {
 
-const size_t memoryPageSize=4096;   // размер страницы
+const size_t memoryPageSize=getpagesize() + 32;   // размер страницы
 
 #ifdef GINV_UTIL_ALLOCATOR
   
@@ -75,7 +77,8 @@ void Allocator::swap(Allocator& a) {
 
 void* Allocator::allocate(size_t n) {
   assert(n > 0);
-  n = ((n >> 6) + 1) << 6;          // выравнивание для кеша
+  // n = ((n >> 6) + 1) << 6;          // выравнивание для кеша
+  n = ((n >> 4) + 1) << 4;          // выравнивание для кеша
   if (mNodeSize + n > mNodeAlloc) { // если памяти в текущем блоке мало
     mNodeAlloc = ((n + memoryPageSize) / memoryPageSize)*memoryPageSize;
     mAlloc += mNodeAlloc;
@@ -98,7 +101,8 @@ void* Allocator::allocate(size_t n) {
 
 void Allocator::deallocate(const void*, size_t n) {
   assert(n > 0);
-  n = ((n >> 6) + 1) << 6;          // выравнивание для кеша
+  // n = ((n >> 6) + 1) << 6;          // выравнивание для кеша
+  n = ((n >> 4) + 1) << 4;          // выравнивание для кеша
   assert(mSize >= n);
   mSize -= n;
 }
