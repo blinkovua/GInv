@@ -50,7 +50,11 @@ public:
 CPPUNIT_TEST_SUITE_REGISTRATION(TestPolyInt);
 
 void TestPolyInt::setUp() {
+<<<<<<< HEAD
   Allocator::setLimitMemory(size_t(26000)*1024*1024);
+=======
+  Allocator::setLimitMemory(size_t(2000)*1024*1024);
+>>>>>>> 9f97713d90249ae23691184059766526013b535a
 }
 
 void TestPolyInt::tearDown() {
