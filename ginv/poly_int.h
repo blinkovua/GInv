@@ -414,7 +414,7 @@ public:
   void algorithmTQ2();
   void algorithmBlockTQ();
   void build() {
-    algorithmTQ2();
+    algorithmBlockTQ();
   }
 
   bool isOne() const { return mOneWrap; }

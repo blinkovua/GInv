@@ -41,11 +41,11 @@ class List {
 
     Node()=delete;
     Node(const Node&)=delete;
-    Node(T data, Node* next):
+    inline Node(T data, Node* next):
         mData(data),
         mNext(next) {
     }
-    ~Node() {}
+    inline ~Node() {}
   };
 
   Allocator*  mAllocator;

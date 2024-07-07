@@ -87,6 +87,14 @@ void TestRandPermutation::test2() {
         CPPUNIT_ASSERT(p[i] != p[j]);
     }
   }
+
+  for(int k=0; k < 24; k++) {
+    p.next(gen);
+    for(int i=0; i < mN; i++) {
+      std::cout << p[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
 }
 
 void TestRandPermutation::test3() {

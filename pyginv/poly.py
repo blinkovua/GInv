@@ -1,48 +1,16 @@
-# -*- coding: utf-8 -*-
-
+import sympy
+from sympy import S, Basic, gcd
 from monom import *
 
 class Poly(list):
-  @staticmethod
-  def __gcd(a, b):
-    while b:
-      a, b = b, a%b
-    return a
+  def __init__(self):
+    super().__init__()
 
-  def __init__(self, k=0):
-    super(Poly, self).__init__()
-    if k:
-      self.append([Monom.zero, k])
-
-  def __str__(self):
-    if not self:
-      return "0"
-    else:
-      lst = []
-      m, k = self[0]
-      if k == 1:
-        lst.append(str(m))
-      elif k == -1:
-        lst.append("-%s" % str(m))
-      elif m.degree() == 0:
-        lst.append(str(k))
-      else:
-        lst.append("%s %s" % (k, m))
-      for m, k in self[1:]:
-        if k == 1:
-          lst.append(" + %s" % str(m))
-        elif k == -1:
-          lst.append(" - %s" % str(m))
-        elif m.degree() == 0:
-          if k < 0:
-            lst.append(" - %s" % -k)
-          else:
-            lst.append(" + %s" % k)
-        elif k < 0:
-          lst.append(" - %s %s" % (-k, m))
-        else:
-          lst.append(" + %s %s" % (k, m))
-      return "".join(lst)
+  def copy(self):
+    p = Poly()
+    for m, k in self:
+      p.append([m, k])
+    return p
 
   def lm(self):
     assert self
@@ -56,8 +24,8 @@ class Poly(list):
     assert self
     return self if m.divisible(self[0][0]) else None
 
-  def __cmp__(self, other):
-    return cmp(self.lm(), other.lm())
+  def cmp(self, other):
+    return self.lm().cmp(other.lm())
 
   def __pos__(self):
     return self
@@ -68,13 +36,20 @@ class Poly(list):
       p.append([m, -k])
     return p
 
+  def __radd__(self, other):
+    return self+other
+
   def __add__(self, other):
+    if other == S.Zero:
+      return self
+    if isinstance(other, int) or isinstance(other, Basic):
+      tmp = Poly()
+      tmp.append([Monom.zero, other])
+      other = tmp
     p = Poly()
-    if isinstance(other, int):
-      other = Poly(other)
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
-      c = cmp(self[i][0], other[j][0])
+      c = self[i][0].cmp(other[j][0])
       if c > 0:
         p.append(self[i])
         i += 1
@@ -96,13 +71,20 @@ class Poly(list):
     assert p.assertValid()
     return p
 
+  def __rsub__(self, other):
+    return self-other
+
   def __sub__(self, other):
+    if other == S.Zero:
+      return self
+    if isinstance(other, int) or isinstance(other, Basic):
+      tmp = Poly()
+      tmp.append([Monom.zero, other])
+      other = tmp
     p = Poly()
-    if isinstance(other, int):
-      other = Poly(other)
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
-      c = cmp(self[i][0], other[j][0])
+      c = self[i][0].cmp(other[j][0])
       if c > 0:
         p.append(self[i])
         i += 1
@@ -124,9 +106,16 @@ class Poly(list):
     assert p.assertValid()
     return p
 
+  def __rmul__(self, other):
+    return self*other
+
   def __mul__(self, other):
-    if isinstance(other, int):
-      other = Poly(other)
+    if other == S.One:
+      return self
+    if isinstance(other, int) or isinstance(other, Basic):
+      tmp = Poly()
+      tmp.append([Monom.zero, other])
+      other = tmp
     t = {}
     for m1, k1 in self:
       for m2, k2 in other:
@@ -136,7 +125,7 @@ class Poly(list):
         else:
           t[m] = k
     p = Poly()
-    for m, k in sorted(t.iteritems(), cmp=lambda a, b: -cmp(a[0], b[0])):
+    for m, k in sorted(t.items(), reverse=True):
       if k:
         p.append([m, k])
     assert p.assertValid()
@@ -145,19 +134,23 @@ class Poly(list):
   def __pow__(self, other):
     assert other >= 0
     if other == 0:
-      return Poly(1)
+      p = Poly()
+      p.append([Monom.zero, S.One])
     else:
-      return reduce(lambda x, y: x*y, (self for i in range(other)))
+      p = self
+      for i in range(1, other):
+        p = p*self
+    return p
 
-  #def prolong(self, var):
-    #p = Poly()
-    #for m, k in self:
-      #p.append([m.prolong(var), k])
-    #assert p.assertValid()
-    #return p
+  def prolong(self, var):
+    p = Poly()
+    for m, k in self:
+      p.append([m.prolong(var), k])
+    assert p.assertValid()
+    return p
 
   def mult(self, m1, k1):
-    assert k1
+    assert k1 != S.Zero
     p = Poly()
     for m2, k2 in self:
       p.append([m1*m2, k1*k2])
@@ -168,24 +161,26 @@ class Poly(list):
     assert self
     g = self[0][1]
     for mk in self[1:]:
-      g = Poly.__gcd(g, mk[1])
-      if g == 1 or g == -1:
+      g = gcd(g, mk[1])
+      if g == S.One:
         return
     for mk in self:
       mk[1] /= g
+      sympy.simplify(mk[1])
     assert self.assertValid()
 
   def reduction(self, i, other):
     assert 0 <= i < len(self)
+    assert self[i][0].position() == other[0][0].position()
     assert self[i][0].divisible(other[0][0])
-    k = Poly.__gcd(self[i][1], other[0][1])
-    m2, k1, k2 = self[i][0]/other[0][0], other[0][1]/k, -self[i][1]/k
+    k = gcd(self[i][1], other[0][1])
+    m2, k1, k2 = self[i][0]/other[0][0], sympy.simplify(other[0][1]/k), sympy.simplify(-self[i][1]/k)
     for mk in self[:i]:
       mk[1] *= k1
     del self[i]
     j, iend, jend = 1, len(self), len(other)
     while i < len(self) and j < jend:
-      c = cmp(self[i][0], other[j][0]*m2)
+      c = self[i][0].cmp(other[j][0]*m2)
       if c > 0:
         self[i][1] *= k1
         i += 1
@@ -194,8 +189,8 @@ class Poly(list):
         i += 1
         j += 1
       else:
-        k = self[i][1]*k1 + other[j][1]*k2
-        if k == 0:
+        k = sympy.simplify(self[i][1]*k1 + other[j][1]*k2)
+        if k == S.Zero:
           del self[i]
         else:
           self[i][1] = k
@@ -231,39 +226,45 @@ class Poly(list):
     self.NFhead(pset)
     if self:
       self.NFtail(pset)
+    return self
 
   @staticmethod
   def S(self, other):
     assert self and other
-    m, k = self[0][0].lcm(other[0][0]), Poly.__gcd(self[0][1], other[0][1])
-    assert self[0][1]%k == 0 and other[0][1]%k == 0
+    assert self.lm().position() == other.lm().position()
+    m, k = self[0][0].lcm(other[0][0]), gcd(self[0][1], other[0][1])
+    #assert self[0][1]%k == S.Zero and other[0][1]%k == S.Zero
     return self.mult(m/self[0][0], other[0][1]/k) - other.mult(m/other[0][0], self[0][1]/k)
 
   def assertValid(self):
     for i in range(len(self)-1):
-      if not self[i][1] or cmp(self[i][0], self[i+1][0]) <= 0:
+      if self[i][1] == S.Zero or self[i][0].cmp(self[i+1][0]) <= 0:
+        print(self[i], self[i+1])
         return False
     return not self or self[-1][1]
 
 
 if __name__ == '__main__':
-  Monom.variables = ['a', 'b', 'c', 'd', 'e', 'f']
-  Monom.zero = Monom(0 for v in Monom.variables)
-  # lex deglex
-  Monom.__cmp__ = Monom.lex
-  for i in range(len(Monom.variables)):
-    p = Poly()
-    p.append([Monom(0 if l != i else 1 for l in range(len(Monom.variables))), 1])
-    globals()[Monom.variables[i]] = p
+  import sympy
+  x, y, z = sympy.symbols('x y z')
 
-  print (b+a)*c*(b+a)
-  print repr(Poly(2))
-  print (Poly(2)  + a)*(c + 3) + a*b*c*2
-  f = -(a - c + 1)**11
-  print f
-  f.reduction(2, (a - c + 1)**10*2)
-  print f
+  variables = ['a', 'b', 'c', 'd', 'e', 'f']
+  Monom.variables = len(variables) + 1
+  # POTlex TOPlex POTdeglex TOPdeglex POTalex TOPalex
+  Monom.cmp = Monom.POTlex
+  Monom.zero = Monom(0 for v in range(Monom.variables))
+  for i, v in enumerate(variables):
+    p = Poly()
+    p.append([Monom(0 if l-1 != i else 1 for l in range(Monom.variables)), 1])
+    globals()[v] = p
+
+  print((b+a)*c*(b+a))
+  print((a + y)*(z + c) + a*b*c*2)
+  f = -(a - c + x)**11
+  print(f)
+  f.reduction(2, (2*c + x + a)**10*2)
+  print(f)
   f = -(a - c + 1)**11
   f.NF((a - c + 1)**2 + b)
-  print f
-  print "S(a*b**2 - 2, 3*a**2*b - 4) =", Poly.S(a*b**2 - 2, Poly(3)*a**2*b - 4)
+  print(f)
+  print("S(a*b**2 - 2, 3*a**2*b - 4) =", Poly.S(a*b**2 - 2, a**2*b*3 - 4))
