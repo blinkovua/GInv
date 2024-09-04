@@ -5,7 +5,7 @@ class Monom(tuple):
   __z = None
   __v = None
   __f = None
-  
+
   @staticmethod
   def init(*args):
     assert len(args) in (1, 2)
@@ -34,7 +34,7 @@ class Monom(tuple):
         return Monom.__z
       else:
         return Monom.__f[kargs['pos']]
-      
+
 
   def __init__(self, *args, **kargs):
     assert len(self) == len(Monom.__var) and all(v >= 0 for v in self)
@@ -46,21 +46,21 @@ class Monom(tuple):
   def __repr__(self):
     m = " ".join(str(d) for d in self)
     if self.__pos == -1:
-      return '[%s]' % m
+      return f'[{m}]'
     else:
-      return '[%d;%s]' % (self.__pos, m)
-    
+      return f'[{self.__pos};{m}]'
+
   def __str__(self):
     m = "*".join("%s**%s" % (v, d) if d > 1 else v \
                 for v, d in zip(Monom.__var, self) if d >= 1)
     if self.__pos == -1:
       if m:
-        return '%s' % m
+        return f'{m}'
       else:
         return '1'
     else:
       if m:
-        return '%s*%s' % (Monom.__fun[self.__pos], m)
+        return f'{Monom.__fun[self.__pos]}*{m}'
       else:
         return Monom.__fun[self.__pos]
 
@@ -86,13 +86,13 @@ class Monom(tuple):
     r = Monom(d + (1 if i == var else 0) for i, d in enumerate(self))
     r.__pos =  self.__pos
     return r
-  
+
   def __mul__(self, other):
     assert self.__pos == -1 or other.__pos == -1
     r = Monom(i + j for i, j in zip(self, other))
-    r.__pos =  max(self.__pos, other.__pos)     
+    r.__pos =  max(self.__pos, other.__pos)
     return r
-          
+
   def divisible(self, other):
     if self.__pos != other.__pos and other.__pos != -1:
       return False
@@ -116,7 +116,7 @@ class Monom(tuple):
     r = Monom(i*n for i in self)
     r.__pos =  self.__pos
     return r
-  
+
   def __lt__(self, other):
     return self.cmp(other) < 0
 
@@ -142,10 +142,10 @@ class Monom(tuple):
     assert False
 
   def __lex(self, other):
-    for i, j in zip(self, other):
-      if i > j:
+    for i in range(len(self)):
+      if self[i] > other[i]:
         return 1
-      elif i < j:
+      elif self[i] < other[i]:
         return -1
     return 0
 
@@ -156,10 +156,10 @@ class Monom(tuple):
     elif d1 < d2:
       return -1
     else:
-      for i, j in reversed(zip(self, other)):
-        if i < j:
+      for i in range(len(self)-1, -1, -1):
+        if self[i] < other[i]:
           return 1
-        elif i > j:
+        elif self[i] > other[i]:
           return -1
       return 0
 
@@ -185,7 +185,7 @@ class Monom(tuple):
       if self[i] < other[i]:
         return i
     assert False
-           
+
 
 if __name__ == '__main__':
   var = ['a', 'b', 'c', 'd', 'e', 'f']
@@ -194,10 +194,10 @@ if __name__ == '__main__':
 
   Monom.cmp = Monom.POTlex
 
-  for i, v in enumerate(var):
-      globals()[v] = Monom(i)
-  for i, p in enumerate(fun):
-      globals()[p] = Monom(pos=i)
+  for i, g in enumerate(var):
+    globals()[g] = Monom(i)
+  for i, g in enumerate(fun):
+    globals()[g] = Monom(pos=i)
 
 
   print(repr(Monom(pos=1).prolong(2).prolong(2).prolong(3)**2))

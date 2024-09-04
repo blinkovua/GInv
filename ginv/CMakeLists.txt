@@ -1,6 +1,6 @@
 PROJECT(ginvinteger)
 
-cmake_minimum_required(VERSION 3.18)
+# cmake_minimum_required(VERSION 3.18)
 
 SET(GINV_VERSION_MAJOR 1)
 SET(GINV_VERSION_MINOR 0)

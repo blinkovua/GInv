@@ -1,6 +1,6 @@
 PROJECT(ginvutil)
 
-cmake_minimum_required(VERSION 3.18)
+# cmake_minimum_required(VERSION 3.18)
 
 SET(GINV_UTIL_VERSION_MAJOR 2)
 SET(GINV_UTIL_VERSION_MINOR 0)
