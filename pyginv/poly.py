@@ -3,14 +3,38 @@ from sympy import S, Basic, gcd
 from monom import *
 
 class Poly(list):
-  def __init__(self):
-    super().__init__()
+  def __init__(self, *args):
+    if args:
+      assert len(args) <= 2
+      if len(args) == 2:
+        assert isinstance(args[0], Monom) and \
+          (isinstance(args[1], int) or isinstance(args[1], Basic)) and args[1]
+        self.append([args[0], args[1]])
+      else:
+        if isinstance(args[0], int) or isinstance(args[0], Basic):
+          assert args[0]
+          self.append([Monom(), args[0]])
+        elif isinstance(args[0], Monom):
+          self.append([args[0], 1])
+        else:
+          assert isinstance(args[0], Poly)
+          for m, k in args[0]:
+            self.append([m, k])
+    assert self.assertValid()
 
-  def copy(self):
-    p = Poly()
-    for m, k in self:
-      p.append([m, k])
-    return p
+  def __str__(self):
+    if not self:
+      return '0'
+    else:
+      r = []
+      for m, c in self:
+        if m.degree() == 0 and m.position() < 0:
+          r.append(str(c))
+        elif c == S.One:
+          r.append(str(m))
+        else:
+          r.append("%s*%s" % (str(m), str(c)))
+      return " + ".join(r)
 
   def lm(self):
     assert self
@@ -43,9 +67,7 @@ class Poly(list):
     if other == S.Zero:
       return self
     if isinstance(other, int) or isinstance(other, Basic):
-      tmp = Poly()
-      tmp.append([Monom.zero, other])
-      other = tmp
+      other = Poly(Monom(), other)
     p = Poly()
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
@@ -78,9 +100,7 @@ class Poly(list):
     if other == S.Zero:
       return self
     if isinstance(other, int) or isinstance(other, Basic):
-      tmp = Poly()
-      tmp.append([Monom.zero, other])
-      other = tmp
+      other = Poly(Monom(), other)
     p = Poly()
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
@@ -113,9 +133,7 @@ class Poly(list):
     if other == S.One:
       return self
     if isinstance(other, int) or isinstance(other, Basic):
-      tmp = Poly()
-      tmp.append([Monom.zero, other])
-      other = tmp
+      other = Poly(Monom(), other)
     t = {}
     for m1, k1 in self:
       for m2, k2 in other:
@@ -134,8 +152,7 @@ class Poly(list):
   def __pow__(self, other):
     assert other >= 0
     if other == 0:
-      p = Poly()
-      p.append([Monom.zero, S.One])
+      p = Poly(Monom(), S.One)
     else:
       p = self
       for i in range(1, other):
@@ -146,6 +163,15 @@ class Poly(list):
     p = Poly()
     for m, k in self:
       p.append([m.prolong(var), k])
+    assert p.assertValid()
+    return p
+  
+  def diff(self, var):
+    p = Poly()
+    for m, k in self:
+      k = sympy.diff(k, var)
+      if k:
+        p.append([m, k])
     assert p.assertValid()
     return p
 
@@ -170,8 +196,8 @@ class Poly(list):
     assert self.assertValid()
 
   def reduction(self, i, other):
+    assert id(self) != id(other)
     assert 0 <= i < len(self)
-    assert self[i][0].position() == other[0][0].position()
     assert self[i][0].divisible(other[0][0])
     k = gcd(self[i][1], other[0][1])
     m2, k1, k2 = self[i][0]/other[0][0], sympy.simplify(other[0][1]/k), sympy.simplify(-self[i][1]/k)
@@ -245,26 +271,55 @@ class Poly(list):
 
 
 if __name__ == '__main__':
-  import sympy
-  x, y, z = sympy.symbols('x y z')
+  sympy.init_printing()
 
-  variables = ['a', 'b', 'c', 'd', 'e', 'f']
-  Monom.variables = len(variables) + 1
-  # POTlex TOPlex POTdeglex TOPdeglex POTalex TOPalex
+  var = ['a', 'b', 'c', 'd', 'e', 'f']
+  fun = ['u', 'v', 'w']
+  Monom.init(var, fun)
+
   Monom.cmp = Monom.POTlex
-  Monom.zero = Monom(0 for v in range(Monom.variables))
-  for i, v in enumerate(variables):
-    p = Poly()
-    p.append([Monom(0 if l-1 != i else 1 for l in range(Monom.variables)), 1])
-    globals()[v] = p
 
-  print((b+a)*c*(b+a))
-  print((a + y)*(z + c) + a*b*c*2)
-  f = -(a - c + x)**11
-  print(f)
-  f.reduction(2, (2*c + x + a)**10*2)
-  print(f)
-  f = -(a - c + 1)**11
-  f.NF((a - c + 1)**2 + b)
-  print(f)
-  print("S(a*b**2 - 2, 3*a**2*b - 4) =", Poly.S(a*b**2 - 2, a**2*b*3 - 4))
+  for i, g in enumerate(var):
+    globals()[g] = Poly(Monom(i))
+  for i, g in enumerate(fun):
+    globals()[g] = Poly(Monom(pos=i))
+
+  print(repr(Poly()))
+  print(Poly())
+
+  alpha, beta, tau = sympy.symbols('alpha, beta, tau', real=True)
+  print(alpha)
+
+  print(repr(Poly(21546)))
+  print(Poly(21546))
+
+  print(repr(Poly(tau**4*21546)))
+  print(Poly(tau**4*21546))
+
+
+  h = u*c**5 + f*a*b*tau*1236537 + d*alpha
+  print(repr(h))
+
+  g = Poly(h)
+  print(g)
+
+  print(g != Poly(h))
+
+  print(h.lm(), h.lc())
+
+  print(g.prolong(4))
+
+  print(repr(g.diff(tau)))
+  print(g.diff(tau))
+
+  g.reduction(0, h)
+  print(g)
+
+  h *= (4*b**4 + f*tau + beta)**11
+  print(h)
+
+  h.NFtail(4*b**4 + f*tau + beta)
+  print(h)
+
+  h.NFhead(4*b**4 + f*tau + beta)
+  print(h)

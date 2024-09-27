@@ -1,3 +1,4 @@
+from itertools import combinations_with_replacement as comb
 
 class Monom(tuple):
   __var = None
@@ -5,7 +6,7 @@ class Monom(tuple):
   __z = None
   __v = None
   __f = None
-  
+
   @staticmethod
   def init(*args):
     assert len(args) in (1, 2)
@@ -34,7 +35,7 @@ class Monom(tuple):
         return Monom.__z
       else:
         return Monom.__f[kargs['pos']]
-      
+
 
   def __init__(self, *args, **kargs):
     assert len(self) == len(Monom.__var) and all(v >= 0 for v in self)
@@ -46,23 +47,44 @@ class Monom(tuple):
   def __repr__(self):
     m = " ".join(str(d) for d in self)
     if self.__pos == -1:
-      return '[%s]' % m
+      return f'[{m}]'
     else:
-      return '[%d;%s]' % (self.__pos, m)
-    
+      return f'[{self.__pos};{m}]'
+
   def __str__(self):
     m = "*".join("%s**%s" % (v, d) if d > 1 else v \
                 for v, d in zip(Monom.__var, self) if d >= 1)
     if self.__pos == -1:
       if m:
-        return '%s' % m
+        return f'{m}'
       else:
         return '1'
     else:
       if m:
-        return '%s*%s' % (Monom.__fun[self.__pos], m)
+        return f'{Monom.__fun[self.__pos]}*{m}'
       else:
         return Monom.__fun[self.__pos]
+
+  def df(self):
+    assert self.__pos >= 0
+    r = [Monom.__fun[self.__pos]]
+    for i, d in enumerate(self):
+      if d:
+        r.append(Monom.__var[i])
+        if d > 1: r.append(f"{d}")
+    m = ", ".join(r)
+    return r[0] if len(r) == 1 else f"df({m})"
+
+  def gf(self):
+    assert self.__pos >= 0
+    r = []
+    for i, d in enumerate(self):
+      if d == 0:
+        r.append(Monom.__var[i])
+      else:
+        r.append(f"{Monom.__var[i]} + {d}")
+    m = ", ".join(r)
+    return f"{Monom.__fun[self.__pos]}({m})"
 
   def position(self):
     return self.__pos
@@ -80,19 +102,22 @@ class Monom(tuple):
 
   def __nonzero__(self):
     return self.__pos >= 0 or sum(self) > 0
-
+  
+  def __bool__(self):
+    return self.__pos >= 0 or sum(self) > 0
+  
   def prolong(self, var):
     assert 0 <= var < len(self)
     r = Monom(d + (1 if i == var else 0) for i, d in enumerate(self))
     r.__pos =  self.__pos
     return r
-  
+
   def __mul__(self, other):
     assert self.__pos == -1 or other.__pos == -1
     r = Monom(i + j for i, j in zip(self, other))
-    r.__pos =  max(self.__pos, other.__pos)     
+    r.__pos =  max(self.__pos, other.__pos)
     return r
-          
+
   def divisible(self, other):
     if self.__pos != other.__pos and other.__pos != -1:
       return False
@@ -115,6 +140,13 @@ class Monom(tuple):
     assert n >= 0
     r = Monom(i*n for i in self)
     r.__pos =  self.__pos
+    return r
+
+  def expand(self):
+    r = []
+    for v, d in enumerate(self):
+        for i in range(d):
+            r.append(v)
     return r
   
   def __lt__(self, other):
@@ -142,10 +174,10 @@ class Monom(tuple):
     assert False
 
   def __lex(self, other):
-    for i, j in zip(self, other):
-      if i > j:
+    for i in range(len(self)):
+      if self[i] > other[i]:
         return 1
-      elif i < j:
+      elif self[i] < other[i]:
         return -1
     return 0
 
@@ -156,10 +188,10 @@ class Monom(tuple):
     elif d1 < d2:
       return -1
     else:
-      for i, j in reversed(zip(self, other)):
-        if i < j:
+      for i in range(len(self)-1, -1, -1):
+        if self[i] < other[i]:
           return 1
-        elif i > j:
+        elif self[i] > other[i]:
           return -1
       return 0
 
@@ -185,7 +217,15 @@ class Monom(tuple):
       if self[i] < other[i]:
         return i
     assert False
-           
+    
+  @staticmethod
+  def gradus(deg):
+    assert deg >= 0
+    for i in comb(list(range(len(Monom.__var))), deg):
+      r = [0 for i in range(len(Monom.__var))]
+      for k in i:
+        r[k] += 1
+      yield Monom(r)
 
 if __name__ == '__main__':
   var = ['a', 'b', 'c', 'd', 'e', 'f']
@@ -194,10 +234,10 @@ if __name__ == '__main__':
 
   Monom.cmp = Monom.POTlex
 
-  for i, v in enumerate(var):
-      globals()[v] = Monom(i)
-  for i, p in enumerate(fun):
-      globals()[p] = Monom(pos=i)
+  for i, g in enumerate(var):
+    globals()[g] = Monom(i)
+  for i, g in enumerate(fun):
+    globals()[g] = Monom(pos=i)
 
 
   print(repr(Monom(pos=1).prolong(2).prolong(2).prolong(3)**2))
@@ -208,6 +248,7 @@ if __name__ == '__main__':
 
   print(repr(a*a**4*b*u*c/a/b*c))
   print(a*a**4*b*u*c/a/b*c/u)
+  print((a*a**4*b*u*c).expand())
 
   m1 = w*b*c**2
   print(repr(m1))
