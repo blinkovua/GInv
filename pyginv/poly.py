@@ -33,7 +33,11 @@ class Poly(list):
         elif c == S.One:
           r.append(str(m))
         else:
+<<<<<<< HEAD
           r.append("%s*%s" % (str(m), str(c)))
+=======
+          r.append(f"{m}*{c}")
+>>>>>>> 728acad8ff690435dd2f4e5420cd12892731de28
       return " + ".join(r)
 
   def lm(self):
@@ -175,6 +179,15 @@ class Poly(list):
     assert p.assertValid()
     return p
 
+  def diff(self, var):
+    p = Poly()
+    for m, k in self:
+      k = sympy.diff(k, var)
+      if k:
+        p.append([m, k])
+    assert p.assertValid()
+    return p
+
   def mult(self, m1, k1):
     assert k1 != S.Zero
     p = Poly()
@@ -229,6 +242,16 @@ class Poly(list):
       self.append([other[j][0]*m2, other[j][1]*k2])
       j += 1
     assert self.assertValid()
+
+  def reduce(self, other):
+    assert isinstance(other, Poly)
+    assert self and other
+    i, iend, lm = 0, len(self), other[0][0]
+    while i < iend and self[i][0].cmp(lm) > 0:
+      i += 1
+    if i < iend and self[i][0].cmp(lm) == 0:
+      self.reduction(i, other)
+      assert self.assertValid()
 
   def NFhead(self, pset):
     while self:
@@ -323,3 +346,14 @@ if __name__ == '__main__':
 
   h.NFhead(4*b**4 + f*tau + beta)
   print(h)
+<<<<<<< HEAD
+=======
+
+  h = (4*b**4 + a*b*c**2 + f*tau + beta)
+  h.reduce(a*b*c**2 + f*tau)
+  print(h)
+
+  h = (4*b**4 + a*b*c**2 + f*tau + beta)
+  h.reduce(a*b*c + f*tau)
+  print(h)
+>>>>>>> 728acad8ff690435dd2f4e5420cd12892731de28
