@@ -142,7 +142,6 @@ class Monom(tuple):
     r.__pos =  self.__pos
     return r
 
-<<<<<<< HEAD
   def expand(self):
     r = []
     for v, d in enumerate(self):
@@ -150,8 +149,6 @@ class Monom(tuple):
             r.append(v)
     return r
   
-=======
->>>>>>> 728acad8ff690435dd2f4e5420cd12892731de28
   def __lt__(self, other):
     return self.cmp(other) < 0
 
@@ -220,7 +217,6 @@ class Monom(tuple):
       if self[i] < other[i]:
         return i
     assert False
-<<<<<<< HEAD
     
   @staticmethod
   def gradus(deg):
@@ -230,9 +226,6 @@ class Monom(tuple):
       for k in i:
         r[k] += 1
       yield Monom(r)
-=======
-
->>>>>>> 728acad8ff690435dd2f4e5420cd12892731de28
 
 if __name__ == '__main__':
   var = ['a', 'b', 'c', 'd', 'e', 'f']

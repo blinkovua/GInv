@@ -9,7 +9,7 @@ class Q(list):
     assert len(args) <= 1
     super().__init__(*args)
     heapq.heapify(self)
-    
+
   def push(self, w):
     if isinstance(w, Wrap):
       heapq.heappush(self, w)
@@ -17,15 +17,15 @@ class Q(list):
       for i in w:
         assert isinstance(i, Wrap)
         heapq.heappush(self, i)
-    
+
   def pop(self):
     return heapq.heappop(self)
-  
-  def reduce(self, j):
+
+  def reduce(self, invdiv):
     d, r = 0, []
     while self and (not r or self[0].degree() == d):
       w = self.pop()
-      w.poly.NFhead(j)
+      w.poly.NFhead(invdiv)
       if w.poly:
         w.update()
         w.poly.pp()
@@ -37,10 +37,10 @@ class Q(list):
           d, r = w.lm.degree(), []
         r.append(w)
     for i in r:
-      i.poly.NFtail(j)
+      i.poly.NFtail(invdiv)
       i.poly.pp()
     return r
-  
+
   def autoReduce(self, q):
     assert q
     def get_min(l):
@@ -71,7 +71,7 @@ class Q(list):
       else:
         w.poly.pp()
         res.append(w)
-      
+
     return res
 
 def ginvBlockLow(pset, invdiv, level=0):
@@ -81,7 +81,7 @@ def ginvBlockLow(pset, invdiv, level=0):
     tp = 0
   elif type(pset[0]) == PolyDiff:
     tp = 1
-    
+
   t = time.time()
   q = Q(Wrap(p) for p in pset)
   while True:
@@ -107,5 +107,5 @@ def ginvBlockLow(pset, invdiv, level=0):
             print()
       q.push(invdiv.insert(res))
   return time.time() - t
-      
-      
+
+

@@ -33,11 +33,7 @@ class Poly(list):
         elif c == S.One:
           r.append(str(m))
         else:
-<<<<<<< HEAD
-          r.append("%s*%s" % (str(m), str(c)))
-=======
           r.append(f"{m}*{c}")
->>>>>>> 728acad8ff690435dd2f4e5420cd12892731de28
       return " + ".join(r)
 
   def lm(self):
@@ -59,7 +55,7 @@ class Poly(list):
     return self
 
   def __neg__(self):
-    p = Poly()
+    p = self.__class__()
     for m, k in self:
       p.append([m, -k])
     return p
@@ -71,8 +67,8 @@ class Poly(list):
     if other == S.Zero:
       return self
     if isinstance(other, int) or isinstance(other, Basic):
-      other = Poly(Monom(), other)
-    p = Poly()
+      other = self.__class__(Monom(), other)
+    p = self.__class__()
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
       c = self[i][0].cmp(other[j][0])
@@ -104,8 +100,8 @@ class Poly(list):
     if other == S.Zero:
       return self
     if isinstance(other, int) or isinstance(other, Basic):
-      other = Poly(Monom(), other)
-    p = Poly()
+      other = self.__class__(Monom(), other)
+    p = self.__class__()
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
       c = self[i][0].cmp(other[j][0])
@@ -137,7 +133,7 @@ class Poly(list):
     if other == S.One:
       return self
     if isinstance(other, int) or isinstance(other, Basic):
-      other = Poly(Monom(), other)
+      other = self.__class__(Monom(), other)
     t = {}
     for m1, k1 in self:
       for m2, k2 in other:
@@ -146,7 +142,7 @@ class Poly(list):
           t[m] += k
         else:
           t[m] = k
-    p = Poly()
+    p = self.__class__()
     for m, k in sorted(t.items(), reverse=True):
       if k:
         p.append([m, k])
@@ -156,7 +152,7 @@ class Poly(list):
   def __pow__(self, other):
     assert other >= 0
     if other == 0:
-      p = Poly(Monom(), S.One)
+      p = self.__class__(Monom(), S.One)
     else:
       p = self
       for i in range(1, other):
@@ -164,25 +160,16 @@ class Poly(list):
     return p
 
   def prolong(self, var):
-    p = Poly()
+    p = self.__class__()
     for m, k in self:
       p.append([m.prolong(var), k])
     assert p.assertValid()
     return p
-  
-  def diff(self, var):
-    p = Poly()
-    for m, k in self:
-      k = sympy.diff(k, var)
-      if k:
-        p.append([m, k])
-    assert p.assertValid()
-    return p
 
-  def diff(self, var):
-    p = Poly()
+  def diff(self, dv):
+    p = self.__class__()
     for m, k in self:
-      k = sympy.diff(k, var)
+      k = sympy.diff(k, dv)
       if k:
         p.append([m, k])
     assert p.assertValid()
@@ -190,7 +177,7 @@ class Poly(list):
 
   def mult(self, m1, k1):
     assert k1 != S.Zero
-    p = Poly()
+    p = self.__class__()
     for m2, k2 in self:
       p.append([m1*m2, k1*k2])
     assert p.assertValid()
@@ -203,9 +190,9 @@ class Poly(list):
       g = gcd(g, mk[1])
       if g == S.One:
         return
+    g *= S.One
     for mk in self:
-      mk[1] /= g
-      sympy.simplify(mk[1])
+      mk[1] = sympy.simplify(mk[1]/g)
     assert self.assertValid()
 
   def reduction(self, i, other):
@@ -243,6 +230,34 @@ class Poly(list):
       j += 1
     assert self.assertValid()
 
+  def redRat(self, i, other):
+    assert id(self) != id(other)
+    assert 0 <= i < len(self)
+    assert self[i][0].divisible(other[0][0])
+    m2, k2 = self[i][0]/other[0][0], sympy.simplify(-self[i][1]*sympy.S.One/other[0][1])
+    del self[i]
+    j, iend, jend = 1, len(self), len(other)
+    while i < len(self) and j < jend:
+      c = self[i][0].cmp(other[j][0]*m2)
+      if c > 0:
+        i += 1
+      elif c < 0:
+        self.insert(i, [other[j][0]*m2, other[j][1]*k2])
+        i += 1
+        j += 1
+      else:
+        k = sympy.simplify(self[i][1] + other[j][1]*k2)
+        if k == S.Zero:
+          del self[i]
+        else:
+          self[i][1] = k
+          i += 1
+        j += 1
+    while j < jend:
+      self.append([other[j][0]*m2, other[j][1]*k2])
+      j += 1
+    assert self.assertValid()
+
   def reduce(self, other):
     assert isinstance(other, Poly)
     assert self and other
@@ -272,9 +287,13 @@ class Poly(list):
         i += 1
 
   def NF(self, pset):
-    self.NFhead(pset)
-    if self:
-      self.NFtail(pset)
+    i = 0
+    while i < len(self):
+      p = pset.find(self[i][0])
+      if p:
+        self.redRat(i, p)
+      else:
+        i += 1
     return self
 
   @staticmethod
@@ -292,6 +311,101 @@ class Poly(list):
         return False
     return not self or self[-1][1]
 
+class PolyDiff(Poly):
+  __dvr = None
+
+  @staticmethod
+  def df(*args):
+    assert args[0] in PolyDiff.__fun
+    m, i = Monom(pos= PolyDiff.__fun.index(args[0])), 1
+    while i < len(args):
+        assert args[i] in PolyDiff.__var
+        v = Monom(PolyDiff.__var.index(args[i]))
+        if i+1 == len(args) or not isinstance(args[i+1], int):
+            m = m*v
+            i += 1
+        else:
+            for d in range(args[i+1]):
+                m = m*v
+            i += 2
+    return PolyDiff(m)
+  
+  @staticmethod
+  def init():
+    assert len(Monom._Monom__fun) >= 0
+    PolyDiff.__var = sympy.symbols(Monom._Monom__var, real=True)
+    PolyDiff.__fun = sympy.symbols(Monom._Monom__fun, real=True)
+    return PolyDiff.__var, PolyDiff.__fun
+
+  def __init__(self, *args):
+    super().__init__(*args)
+
+  def __str__(self):
+    if not self:
+      return '0'
+    else:
+      r = []
+      for m, c in self:
+        if not m:
+          r.append(f"{c}")
+        else:
+          if c == S.One:
+            r.append(f"df({m.df()})")
+          else:
+            k = f"{c}"
+            if k.find("+") < 0 and k.find("-") < 0:
+              r.append(f"{m.df()}*{c}")
+            else:
+              r.append(f"{m.df()}*({c})")
+      return " + ".join(r)
+
+  def prolong(self, var):
+    p1, p2 = PolyDiff(), PolyDiff()
+    for m, k in self:
+      if m:
+        p1.append([m.prolong(var), k])
+    for m, k in self:
+      k = sympy.diff(k, PolyDiff.__var[var])
+      if k:
+        p2.append([m, k])
+    return p1 + p2
+
+  def NFhead(self, pset):
+    while self:
+      p = pset.find(self[0][0])
+      if not p:
+        break
+      else:
+        m2 = self[0][0]/p[0][0]
+        for df in m2.expand():
+          p = p.prolong(df)
+        self.reduction(0, p)
+
+  def NFtail(self, pset):
+    assert self
+    i = 1
+    while i < len(self):
+      p = pset.find(self[i][0])
+      if not p:
+        i += 1
+      else:
+        m2 = self[i][0]/p[0][0]
+        for df in m2.expand():
+          p = p.prolong(df)
+        self.reduction(i, p)
+
+  def NF(self, pset):
+    i = 0
+    while i < len(self):
+      p = pset.find(self[i][0])
+      if not p:
+        i += 1
+      else:
+        m2 = self[i][0]/p[0][0]
+        for df in m2.expand():
+          p = p.prolong(df)
+        self.redRat(i, p)
+    return self
 
 if __name__ == '__main__':
   sympy.init_printing()
@@ -346,8 +460,6 @@ if __name__ == '__main__':
 
   h.NFhead(4*b**4 + f*tau + beta)
   print(h)
-<<<<<<< HEAD
-=======
 
   h = (4*b**4 + a*b*c**2 + f*tau + beta)
   h.reduce(a*b*c**2 + f*tau)
@@ -356,4 +468,3 @@ if __name__ == '__main__':
   h = (4*b**4 + a*b*c**2 + f*tau + beta)
   h.reduce(a*b*c + f*tau)
   print(h)
->>>>>>> 728acad8ff690435dd2f4e5420cd12892731de28
