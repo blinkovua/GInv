@@ -1,4 +1,3 @@
-
 from pprint import pprint
 import heapq, time
 
@@ -9,6 +8,8 @@ class Q(list):
     assert len(args) <= 1
     super().__init__(*args)
     heapq.heapify(self)
+    self.crit1 = 0
+    self.crit2 = 0
 
   def push(self, w):
     if isinstance(w, Wrap):
@@ -21,21 +22,31 @@ class Q(list):
   def pop(self):
     return heapq.heappop(self)
 
-  def reduce(self, invdiv):
+  def reduceMinDegree(self, invdiv):
     d, r = 0, []
     while self and (not r or self[0].degree() == d):
       w = self.pop()
-      w.poly.NFhead(invdiv)
-      if w.poly:
-        w.update()
-        w.poly.pp()
-        if not r:
-          d = w.degree()
-        elif d > w.degree():
-          for i in r:
-            self.push(i)
-          d, r = w.lm.degree(), []
+      w1 = invdiv.findWrap(w.lm)
+      if not w1:
         r.append(w)
+      else:
+        if w.crit1(w1):
+          self.crit1 += 1
+        elif w.crit2(w1):
+          self.crit2 += 1
+        else:
+          w.refresh(w1)
+          w.poly.NFhead(invdiv)
+          if w.poly:
+            w.update()
+            w.poly.pp()
+            if not r:
+              d = w.degree()
+            elif d > w.degree():
+              for i in r:
+                self.push(i)
+              d, r = w.lm.degree(), []
+            r.append(w)
     for i in r:
       i.poly.NFtail(invdiv)
       i.poly.pp()
@@ -57,6 +68,7 @@ class Q(list):
       w = get_min(q)
       l = []
       for v in q:
+        v.refresh(w)
         v.poly.reduce(w.poly)
         if v.poly:
           v.update()
@@ -93,19 +105,24 @@ def ginvBlockLow(pset, invdiv, level=0):
       break
     if j == 0 or 0 < i < j:
       q.push(invdiv.prolong(i))
-    res = q.reduce(invdiv)
+    res = q.reduceMinDegree(invdiv)
     if res:
       res = q.autoReduce(res)
+      if tp == 1:
+        for r in res:
+          r.poly.NFtail(invdiv)
+          r.poly.pp()
       if level > 0:
+        if tp == 0:
+          print(", ".join(f"{w.lm}" for w in res))
         if tp == 1:
-          for w in res:
-            print(f"{w.lm}", end=", ")
-            print()
-        if tp == 2:
-          for w in res:
-            print(f"{w.lm.df()}", end=", ")
-            print()
+          print(", ".join(f"{w.lm.df()}" for w in res))
       q.push(invdiv.insert(res))
-  return time.time() - t
+
+      for w in invdiv:
+        w.poly.NFtail(invdiv)
+        w.poly.pp()
+
+  return time.time() - t, q.crit1, q.crit2
 
 

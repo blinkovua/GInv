@@ -1,25 +1,39 @@
 import sympy
-from sympy import S, Basic, gcd
+#from sympy import S, Basic, gcd, igcd_lehmer, Integer
+from sympy import S, Integer, gcd, cancel, expand
 from monom import *
 
 class Poly(list):
   def __init__(self, *args):
+    #if args:
+      #assert len(args) <= 2
+      #if len(args) == 2:
+        #assert isinstance(args[0], Monom) and \
+          #(isinstance(args[1], int) or isinstance(args[1], Basic)) and args[1]
+        #self.append([args[0], S(args[1])])
+      #else:
+        #if isinstance(args[0], int) or isinstance(args[0], Basic):
+          #assert args[0]
+          #self.append([Monom(), args[0]])
+        #elif isinstance(args[0], Monom):
+          #self.append([args[0], 1])
+        #else:
+          #assert isinstance(args[0], Poly)
+          #for m, k in args[0]:
+            #self.append([m, k])
     if args:
-      assert len(args) <= 2
-      if len(args) == 2:
-        assert isinstance(args[0], Monom) and \
-          (isinstance(args[1], int) or isinstance(args[1], Basic)) and args[1]
-        self.append([args[0], args[1]])
+      assert len(args) == 1
+      if isinstance(args[0], Monom):
+        self.append([args[0], Integer(1)])
+      elif isinstance(args[0], Poly):
+        for m, k in args[0]:
+          self.append([m, k])
       else:
-        if isinstance(args[0], int) or isinstance(args[0], Basic):
-          assert args[0]
-          self.append([Monom(), args[0]])
-        elif isinstance(args[0], Monom):
-          self.append([args[0], 1])
+        assert args[0]
+        if isinstance(args[0], int):
+          self.append([Monom(), Integer(args[0])])
         else:
-          assert isinstance(args[0], Poly)
-          for m, k in args[0]:
-            self.append([m, k])
+          self.append([Monom(), args[0]])
     assert self.assertValid()
 
   def __str__(self):
@@ -66,8 +80,10 @@ class Poly(list):
   def __add__(self, other):
     if other == S.Zero:
       return self
-    if isinstance(other, int) or isinstance(other, Basic):
-      other = self.__class__(Monom(), other)
+    if isinstance(other, int): 
+      other = self.__class__(Integer(other))
+    else:
+      other = self.__class__(other)
     p = self.__class__()
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
@@ -99,8 +115,10 @@ class Poly(list):
   def __sub__(self, other):
     if other == S.Zero:
       return self
-    if isinstance(other, int) or isinstance(other, Basic):
-      other = self.__class__(Monom(), other)
+    if isinstance(other, int): 
+      other = self.__class__(Integer(other))
+    else:
+      other = self.__class__(other)
     p = self.__class__()
     i, j, iend, jend = 0, 0, len(self), len(other)
     while i < iend and j < jend:
@@ -132,8 +150,10 @@ class Poly(list):
   def __mul__(self, other):
     if other == S.One:
       return self
-    if isinstance(other, int) or isinstance(other, Basic):
-      other = self.__class__(Monom(), other)
+    if isinstance(other, int): 
+      other = self.__class__(Integer(other))
+    else:
+      other = self.__class__(other)
     t = {}
     for m1, k1 in self:
       for m2, k2 in other:
@@ -152,7 +172,7 @@ class Poly(list):
   def __pow__(self, other):
     assert other >= 0
     if other == 0:
-      p = self.__class__(Monom(), S.One)
+      p = self.__class__(Integer(1))
     else:
       p = self
       for i in range(1, other):
@@ -187,12 +207,14 @@ class Poly(list):
     assert self
     g = self[0][1]
     for mk in self[1:]:
-      g = gcd(g, mk[1])
       if g == S.One:
         return
-    g *= S.One
+      g = gcd(g, mk[1])
     for mk in self:
-      mk[1] = sympy.simplify(mk[1]/g)
+      #mk[1] = ratsimp(mk[1]/g)
+      mk[1] = mk[1]/g
+      if not mk[1].is_integer:
+        mk[1] = cancel(mk[1])
     assert self.assertValid()
 
   def reduction(self, i, other):
@@ -200,7 +222,12 @@ class Poly(list):
     assert 0 <= i < len(self)
     assert self[i][0].divisible(other[0][0])
     k = gcd(self[i][1], other[0][1])
-    m2, k1, k2 = self[i][0]/other[0][0], sympy.simplify(other[0][1]/k), sympy.simplify(-self[i][1]/k)
+    #m2, k1, k2 = self[i][0]/other[0][0], ratsimp(other[0][1]/k), ratsimp(-self[i][1]/k)
+    m2, k1, k2 = self[i][0]/other[0][0], other[0][1]/k, -self[i][1]/k
+    if not k1.is_integer:
+        k1 = cancel(k1)
+    if not k2.is_integer:
+        k2 = cancel(k2)
     for mk in self[:i]:
       mk[1] *= k1
     del self[i]
@@ -215,7 +242,10 @@ class Poly(list):
         i += 1
         j += 1
       else:
-        k = sympy.simplify(self[i][1]*k1 + other[j][1]*k2)
+        #k = ratsimp(self[i][1]*k1 + other[j][1]*k2)
+        k = self[i][1]*k1 + other[j][1]*k2
+        if not k.is_integer:
+          k = expand(k)
         if k == S.Zero:
           del self[i]
         else:
@@ -234,7 +264,10 @@ class Poly(list):
     assert id(self) != id(other)
     assert 0 <= i < len(self)
     assert self[i][0].divisible(other[0][0])
-    m2, k2 = self[i][0]/other[0][0], sympy.simplify(-self[i][1]*sympy.S.One/other[0][1])
+    #m2, k2 = self[i][0]/other[0][0], ratsimp(sympy.S(-self[i][1])/other[0][1])
+    m2, k2 = self[i][0]/other[0][0], -self[i][1]/other[0][1]
+    if not k2.is_integer:
+        k2 = cancel(k2)
     del self[i]
     j, iend, jend = 1, len(self), len(other)
     while i < len(self) and j < jend:
@@ -246,7 +279,9 @@ class Poly(list):
         i += 1
         j += 1
       else:
-        k = sympy.simplify(self[i][1] + other[j][1]*k2)
+        k = self[i][1] + other[j][1]*k2
+        if not k.is_integer:
+          k = expand(k)
         if k == S.Zero:
           del self[i]
         else:
@@ -312,29 +347,55 @@ class Poly(list):
     return not self or self[-1][1]
 
 class PolyDiff(Poly):
-  __dvr = None
+  __var = None
+  __fun = None
 
   @staticmethod
   def df(*args):
     assert args[0] in PolyDiff.__fun
-    m, i = Monom(pos= PolyDiff.__fun.index(args[0])), 1
+    m, i = [0 for i in Monom._Monom__var], 1
     while i < len(args):
         assert args[i] in PolyDiff.__var
-        v = Monom(PolyDiff.__var.index(args[i]))
+        v = PolyDiff.__var.index(args[i])
         if i+1 == len(args) or not isinstance(args[i+1], int):
-            m = m*v
+            m[v] += 1
             i += 1
         else:
-            for d in range(args[i+1]):
-                m = m*v
+            m[v] += args[i+1]
             i += 2
-    return PolyDiff(m)
-  
+    return PolyDiff(Monom(m, pos=PolyDiff.__fun.index(args[0])))
+
+  @staticmethod
+  def diff2poly(a):
+    if not a.args:
+      return PolyDiff(a)
+    else:
+      if a.func == sympy.Add:
+        r = PolyDiff.diff2poly(a.args[0])
+        for s in a.args[1:]:
+          r = r + PolyDiff.diff2poly(s)
+      elif a.func == sympy.Mul:
+        r = PolyDiff.diff2poly(a.args[0])
+        for s in a.args[1:]:
+          r = r * PolyDiff.diff2poly(s)
+      elif a.func == sympy.Pow:
+        r = PolyDiff.diff2poly(a.args[0])**a.args[1]
+      elif repr(a.func) in Monom._Monom__fun:
+        r = PolyDiff(Monom(pos=Monom._Monom__fun.index(repr(a.func))))
+      else:
+        assert a.func == sympy.Derivative
+        assert repr(a.args[0].func) in Monom._Monom__fun
+        m = [0 for i in Monom._Monom__var]
+        for v, d in a.args[1:]:
+          m[Monom._Monom__var.index(repr(v))] = d
+        r = PolyDiff(Monom(m, pos=Monom._Monom__fun.index(repr(a.args[0].func))))
+      return r       
+
   @staticmethod
   def init():
     assert len(Monom._Monom__fun) >= 0
     PolyDiff.__var = sympy.symbols(Monom._Monom__var, real=True)
-    PolyDiff.__fun = sympy.symbols(Monom._Monom__fun, real=True)
+    PolyDiff.__fun = sympy.symbols(Monom._Monom__fun, cls=sympy.Function, real=True)
     return PolyDiff.__var, PolyDiff.__fun
 
   def __init__(self, *args):
@@ -350,7 +411,7 @@ class PolyDiff(Poly):
           r.append(f"{c}")
         else:
           if c == S.One:
-            r.append(f"df({m.df()})")
+            r.append(f"{m.df()}")
           else:
             k = f"{c}"
             if k.find("+") < 0 and k.find("-") < 0:
@@ -468,3 +529,26 @@ if __name__ == '__main__':
   h = (4*b**4 + a*b*c**2 + f*tau + beta)
   h.reduce(a*b*c + f*tau)
   print(h)
+
+  df = PolyDiff.df
+  var, fun = PolyDiff.init()
+  a, b, c, d, e, f = var
+  u, v, w = fun
+
+  print(f"{w}")
+  print(f"{4*df(u, b, a, b, 3)!r}")
+
+  h = (4*a*b + c*(c + b**2 + a) + a*c)*(3*df(u, b, e, f, 3) + 4*df(v, b, a) + d)
+  print(f"{h!r}")
+  print(f"{h}")
+
+  g = h.prolong(2).prolong(3)
+  print(f"{g!r}")
+  print(f"{g}")
+
+  h.NFhead(4*df(v, a, b)*d)
+  print(f"{h!r}")
+  print(f"{h}")
+
+  h.NFtail(df(u, b))
+  print(f"{h!r}")

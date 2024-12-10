@@ -1,4 +1,3 @@
-import gv
 import sympy
 
 from poly import *
@@ -9,18 +8,18 @@ class Wrap:
   def __init__(self, *args):
     if len(args) == 1 and isinstance(args[0], Poly):
       self.poly = args[0]
-      self.ansector = Monom(args[0].lm())
+      self.ansector = args[0].lm().copy()
     else:
       assert len(args) == 2 and isinstance(args[0], Wrap)
       assert args[0].prolong[args[1]] == False
       assert args[0].nonmult[args[1]] == True
       self.poly = args[0].poly.prolong(args[1])
-      self.ansector = Monom(args[0].ansector)
+      self.ansector = args[0].ansector.copy()
       args[0].prolong[args[1]] = True
     assert self.poly
     self.id = Wrap.id
     Wrap.id += 1
-    self.lm = Monom(self.poly.lm())
+    self.lm = self.poly.lm().copy()
     self.prolong = [False for i in range(len(self.lm))]
     self.nonmult = [False for i in range(len(self.lm))]
 
@@ -52,14 +51,40 @@ class Wrap:
   def update(self):
     assert self.poly
     if self.lm != self.poly.lm():
-      self.lm = Monom(self.poly.lm())
-      self.ansector = Monom(self.poly.lm())
+      self.lm = self.poly.lm().copy()
+      self.ansector = self.poly.lm().copy()
       for i in range(len(self.lm)):
         self.prolong[i] = False
         self.nonmult[i] = False
 
+  def refresh(self, other):
+    assert self.poly.lm() == self.lm
+    if self.ansector.degree() < other.ansector.degree():
+      other.ansector = self.ansector.copy()
+    # if self.lm == other.lm:
+    #   if any(k > l for k, l in zip(self.ansector, other.ansector)):
+    #     self.ansector = other.ansector.copy()
+    
+        #if self.poly.lc().is_integer and\
+           #other.poly.lc().is_integer and\
+           #self.poly.lc() % other.poly.lc() != 0:
+          #a, b, g = sympy.gcdex(self.poly.lc(), other.poly.lc())
+          #print(a, b, g)
+
+  def isGB(self):
+    return self.lm == self.ansector
+
   def multi(self):
     return sum(0 if i else 1 for i in self.nonmult)
+
+  def crit1(self, other):
+    return type(self.poly) == Poly and\
+        all(i == 0 or j == 0 for i, j in zip(self.ansector, other.ansector))
+
+  def crit2(self, other):
+    return type(self.poly) == Poly and\
+        any(i > k + l for i, k, l in zip(\
+            self.lm, self.ansector, other.ansector))
 
   def __lt__(self, other):
     return self.lm.cmp(other.lm) < 0 or \
@@ -70,10 +95,10 @@ class Wrap:
       (self.lm.cmp(other.lm) == 0 and self.id > other.id)
 
   def __eq__(self, other):
-    return self == other
+    return self.id == other.id
 
   def __ne__(self, other):
-    return self != other
+    return self.id != other.id
 
 # HilbertPoly, Cartan’s Character
 # E. Cartan. Les syst`emes diff´erentiels ext´erieurs et leurs applications g´eom´etriques. Hermann, 1945
@@ -105,9 +130,13 @@ class CombRepet(list):
     return sum(k*s**i for i, k in enumerate(self))
 
 class HilbertPoly(list):
-  def __init__(self, n):
+  def __init__(self, n, init=True):
     assert n > 0
-    self[:] = CombRepet(n+1)
+    if init:
+      self[:] = CombRepet(n+1)
+    else:
+      for i in range(n+1):
+        self.append(0)
 
   def __isub__(self, other):
     assert isinstance(other, CombRepet)
@@ -116,6 +145,13 @@ class HilbertPoly(list):
       self[i] -= other[i]
     return self
 
+  def __iadd__(self, other):
+    assert isinstance(other, HilbertPoly)
+    assert len(self) == len(other)
+    for i in range(len(self)):
+      self[i] += other[i]
+    return self
+  
   def __str__(self):
     r = f"{sum(s*sympy.symbols('s')**i for i, s in enumerate(self))}"
     return r.replace('**', '^').replace('*', '')
@@ -124,13 +160,13 @@ class HilbertPoly(list):
     return sum(k*s**i for i, k in enumerate(self))
 
 class Janet:
-  count = 0
-  reduction = 0
-
   def __init__(self):
-    Janet.reduction = 0
-    Janet.count = 0
+    self.__reduction = 0
+    self.__count = 0
     self.root = []
+    
+  def is_forest(self):
+    return False
 
   def findWrap(self, m):
     if self.root:
@@ -138,7 +174,7 @@ class Janet:
       r, d, v = self.root, m.degree(), 0
       while r and d:
         if len(r)-1 <= m[v] and isinstance(r[-1], Wrap):
-            Janet.reduction += 1
+            self.__reduction += 1
             return r[-1]
         r, d, v = r[min(len(r)-1, m[v])], d - m[v], v + 1
       return r if isinstance(r, Wrap) else None
@@ -154,6 +190,17 @@ class Janet:
           yield from traversal(n)
         if isinstance(r[-1], Wrap):
           yield r[-1]
+        else:
+          yield from traversal(r[-1])
+    return traversal(self.root)
+
+  def GB(self):
+    def traversal(r):
+      if r:
+        for n in r[:-1]:
+          yield from traversal(n)
+        if isinstance(r[-1], Wrap):
+          if r[-1].isGB(): yield r[-1]
         else:
           yield from traversal(r[-1])
     return traversal(self.root)
@@ -205,14 +252,14 @@ class Janet:
         w.nonmult[v] = False
         r.append(w)
         break
-    Janet.count += 1
+    self.__count += 1
     return lst
 
   def insert(self, q):
     lst = []
     for w in q:
       self.__insert(w, lst)
-    Janet.count -= len(lst)
+    self.__count -= len(lst)
     return lst
 
   def setNonmut(self, m):
@@ -234,7 +281,7 @@ class Janet:
           d = min(d, w.degree()) if d else w.degree()
     return d
 
-  def prolong(self, d=0):
+  def prolong(self, d):
     r = []
     for w in self:
       if d == 0 or d == w.degree():
@@ -243,15 +290,24 @@ class Janet:
             r.append(Wrap(w, v))
     return r
 
+  def reduction(self):
+    return self.__reduction
+
+  def count(self):
+    return self.__count
+    
   def HP(self):
-    hp = None
+    hp = HilbertPoly(len(Monom._Monom__var))
     for w in self:
-      if not hp:
-        hp = HilbertPoly(len(w.lm))
       hp -= CombRepet(w.multi() + 1, w.degree())
     return hp
 
   def saveImage(self, filename, level=0):
+    try:
+      import gv
+    except Exception:
+      print("установите модуль 'gv' для рисования диаграмм с помощью 'graphviz'")
+      return
     g = gv.graph('Janet tree')
     gv.setv(g, 'nojustify', 'true')
     gv.setv(g, 'fontname', 'monospace')
@@ -269,12 +325,16 @@ class Janet:
             else:
               indent = ' '*(2 + len(repr(n.lm.position())))
             if level >= 1:
-              add += f"\n{indent}{' '.join('*' if i else '_' for i in n.nonmult)}"
+              add += f"<BR/>{indent}{' '.join('*' if i else '_' for i in n.nonmult)}"
             if level >= 2:
-              add += f"\n{indent}{' '.join('*' if i else '_' for i in n.prolong)}"
+              add += f"<BR/>{indent}{' '.join('*' if i else '_' for i in n.prolong)}"
             if level >= 3:
-              add += f"\n{n.ansector!r}"
-          gv.setv(n2, 'label', f"{n.lm!r}{add}")
+              add += f"<BR/>{n.ansector!r}"
+          if n.isGB():
+            gv.setv(n2, 'label', f'<<B>{n.lm!r}</B>{add}>')
+          else:
+            gv.setv(n2, 'label', f"<{n.lm!r}{add}>")
+
           gv.setv(n2, 'shape', 'plaintext')
           gv.setv(n2, 'fontsize', '10')
           if n1:
@@ -298,12 +358,94 @@ class Janet:
     draw(self.root, None, 'solid')
 
     mark = gv.node(g, 'mark')
-    gv.setv(mark, 'label', f'#Janet = {Janet.count} \nHP_{{{deg}}} = {self.HP()}')
+    gv.setv(mark, 'label', f'<<B>#Janet = {self.count}<BR/>HP_{{{deg}}} = {self.HP()}</B>>')
     gv.setv(mark, 'shape', 'plaintext')
     gv.setv(mark, 'fontsize', '12')
     gv.layout(g, 'dot')
     gv.render(g, filename.split('.')[-1], filename)
 
+class JanetCache(Janet):
+  def __init__(self, *args):
+    super().__init__(*args)
+    self.сache = {}
+
+  def find(self, m):
+    w = self.findWrap(m)
+    if not w:
+      return None
+    else:
+      m1 = m/w.lm
+      if not m1:
+        r = w.poly
+      else:
+        if m in self.сache:
+          r = self.сache[m]
+        else:
+          r = w.poly.mult(m1, sympy.S.One)
+        r.NFtail(self)
+        r.pp()
+        self.сache[m] = r
+        #print(m1, end=" ")
+    return r
+
+class Forest(list):
+  def __init__(self, InvDiv):
+    assert len(Monom._Monom__fun) > 0
+    for i in range(len(Monom._Monom__fun)):
+      self.append(InvDiv())
+
+  def is_forest(self):
+    return True
+  
+  def findWrap(self, m):
+    return self[m.position()].findWrap(m) if m.position() >= 0 else None
+  
+  def find(self, m):
+    return self[m.position()].find(m) if m.position() >= 0 else None
+
+  def __iter__(self):
+    for idiv in super().__iter__():
+      for i in idiv:
+        yield i
+       
+  def GB(self):
+    for idiv in super().__iter__():
+      for i in idiv.GB():
+        yield i
+              
+  def insert(self, q):
+    lst = []
+    for w in q:
+      lst.extend(self[w.lm.position()].insert([w]))
+    return lst
+
+  def degMinProlong(self):
+    d = 0
+    for idiv in super().__iter__():
+       if d == 0:
+         d = idiv.degMinProlong()
+       else:   
+         d = min(d, idiv.degMinProlong())
+    return d
+
+  def prolong(self, d):
+    r = []
+    for idiv in super().__iter__():
+      r.extend(idiv.prolong(d))
+    return r
+
+  def reduction(self):
+    return sum(idiv.reduction() for idiv in super().__iter__())
+
+  def count(self):
+    return sum(idiv.count() for idiv in super().__iter__())
+  
+  def HP(self):
+    hp = HilbertPoly(len(Monom._Monom__var), init=False)
+    for h in super().__iter__():
+      hp += h.HP()
+    return hp
+      
 if __name__ == '__main__':
   from pprint import pprint
   sympy.init_printing()

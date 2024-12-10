@@ -44,6 +44,11 @@ class Monom(tuple):
     else:
       self.__pos = kargs['pos']
 
+  def copy(self):
+    r = Monom(self)
+    r.__pos = self.__pos
+    return r
+
   def __repr__(self):
     m = " ".join(str(d) for d in self)
     if self.__pos == -1:
@@ -52,7 +57,7 @@ class Monom(tuple):
       return f'[{self.__pos};{m}]'
 
   def __str__(self):
-    m = "*".join("%s**%s" % (v, d) if d > 1 else v \
+    m = "*".join(f"{v}**{d}" if d > 1 else v \
                 for v, d in zip(Monom.__var, self) if d >= 1)
     if self.__pos == -1:
       if m:
@@ -64,27 +69,59 @@ class Monom(tuple):
         return f'{Monom.__fun[self.__pos]}*{m}'
       else:
         return Monom.__fun[self.__pos]
+  
+  def latex(self):
+    m = " ".join(f"{{{v}}}^{d}" if d > 1 else f"{{{v}}}" \
+                for v, d in zip(Monom.__var, self) if d >= 1)
+    if self.__pos == -1:
+      if m:
+        return f'{m}'
+      else:
+        return '1'
+    else:
+      if m:
+        return f'{Monom.__fun[self.__pos]} {m}'
+      else:
+        return Monom.__fun[self.__pos]
 
   def df(self):
-    assert self.__pos >= 0
-    r = [Monom.__fun[self.__pos]]
-    for i, d in enumerate(self):
-      if d:
-        r.append(Monom.__var[i])
-        if d > 1: r.append(f"{d}")
-    m = ", ".join(r)
-    return r[0] if len(r) == 1 else f"df({m})"
+    if self.__pos == -1:
+      assert self.degree() == 0
+      return "1"
+    else:
+      r = [Monom.__fun[self.__pos]]
+      for i, d in enumerate(self):
+        if d:
+          r.append(Monom.__var[i])
+          if d > 1: r.append(f"{d}")
+      m = ", ".join(r)
+      return f"df({m})"
 
-  def gf(self):
-    assert self.__pos >= 0
-    r = []
-    for i, d in enumerate(self):
-      if d == 0:
-        r.append(Monom.__var[i])
+  def df_latex(self):
+    if self.__pos == -1:
+      assert self.degree() == 0
+      return "1"
+    else:
+      r = " ".join([f"{{{Monom.__var[i]}}}" for i in self.expand()])
+      if r:
+        r = f"{{{Monom.__fun[self.__pos]}}}_{{{r}}}"
       else:
-        r.append(f"{Monom.__var[i]} + {d}")
-    m = ", ".join(r)
-    return f"{Monom.__fun[self.__pos]}({m})"
+        r = f"{{{Monom.__fun[self.__pos]}}}"
+      return r
+    
+  def gf(self):
+    if self.__pos == -1:
+      assert self.degree() == 0
+      return "1"
+    else:
+      r = []
+      for i, d in enumerate(self):
+        if d == 0:
+          r.append(Monom.__var[i])
+        else:
+          r.append(f"{Monom.__var[i]} + {d}")
+      m = ", ".join(r)
+      return f"{Monom.__fun[self.__pos]}({m})"
 
   def position(self):
     return self.__pos
@@ -102,20 +139,20 @@ class Monom(tuple):
 
   def __nonzero__(self):
     return self.__pos >= 0 or sum(self) > 0
-  
+
   def __bool__(self):
     return self.__pos >= 0 or sum(self) > 0
-  
+
   def prolong(self, var):
     assert 0 <= var < len(self)
     r = Monom(d + (1 if i == var else 0) for i, d in enumerate(self))
-    r.__pos =  self.__pos
+    r.__pos = self.__pos
     return r
 
   def __mul__(self, other):
     assert self.__pos == -1 or other.__pos == -1
     r = Monom(i + j for i, j in zip(self, other))
-    r.__pos =  max(self.__pos, other.__pos)
+    r.__pos = max(self.__pos, other.__pos)
     return r
 
   def divisible(self, other):
@@ -139,7 +176,7 @@ class Monom(tuple):
   def __pow__(self, n):
     assert n >= 0
     r = Monom(i*n for i in self)
-    r.__pos =  self.__pos
+    r.__pos = self.__pos
     return r
 
   def expand(self):
@@ -148,7 +185,7 @@ class Monom(tuple):
         for i in range(d):
             r.append(v)
     return r
-  
+
   def __lt__(self, other):
     return self.cmp(other) < 0
 
@@ -162,10 +199,10 @@ class Monom(tuple):
     return self.cmp(other) >= 0
 
   def __eq__(self, other):
-    return self.cmp(other) == 0
+    return all(i == j for i, j in zip(self, other))
 
   def __ne__(self, other):
-    return self.cmp(other) != 0
+    return any(i != j for i, j in zip(self, other))
 
   def __hash__(self):
     return tuple.__hash__(self + (self.__pos,))
@@ -217,20 +254,42 @@ class Monom(tuple):
       if self[i] < other[i]:
         return i
     assert False
-    
+
   @staticmethod
-  def gradus(deg):
-    assert deg >= 0
+  def gradus(deg, pos=-1):
+    assert deg >= 0 and -1 <= pos < len(Monom.__fun)
     for i in comb(list(range(len(Monom.__var))), deg):
       r = [0 for i in range(len(Monom.__var))]
       for k in i:
         r[k] += 1
-      yield Monom(r)
+      m = Monom(r)
+      m.__pos = pos
+      yield m
 
 if __name__ == '__main__':
   var = ['a', 'b', 'c', 'd', 'e', 'f']
   fun = ['u', 'v', 'w']
   Monom.init(var, fun)
+
+  print(f"{Monom()!r}")
+  print(Monom())
+
+  print(Monom(4))
+  print(f"{Monom(4)!r}")
+  print(f"{Monom(4)!s}")
+
+  print(f"{Monom(pos=2)!r}")
+  print(f"{Monom(pos=2)!s}")
+
+  print(f"{Monom(pos=1)*Monom((1, 2, 3, 4, 5, 6))!r}")
+  print(f"{Monom(pos=1)*Monom([1, 2, 3, 4, 5, 6])!s}")
+
+  print(Monom((1, 2, 3, 4, 5, 6)).expand())
+  m = Monom()
+  for i in Monom((1, 2, 3, 4, 5, 6)).expand():
+    m = m*Monom(i)
+  print(f"{m!r}")
+  print(f"{m!s}")
 
   Monom.cmp = Monom.POTlex
 
@@ -240,25 +299,50 @@ if __name__ == '__main__':
     globals()[g] = Monom(pos=i)
 
 
-  print(repr(Monom(pos=1).prolong(2).prolong(2).prolong(3)**2))
-  print(Monom(pos=1).prolong(2).prolong(2).prolong(3)**2)
+  print(a**4*b*u)
+
+  m = Monom(pos=1).prolong(2).prolong(2).prolong(3)**2
+  print(f"{m!r}")
+  print(f"{m}")
+  print(f"{m.df()}") # форма для производных
+  print(f"{m.gf()}") # форма для разностных функций
 
   print(repr(Monom(pos=1)*Monom(2)*Monom(2)*Monom(3)**2))
   print(v*c*c*d**2)
 
-  print(repr(a*a**4*b*u*c/a/b*c))
-  print(a*a**4*b*u*c/a/b*c/u)
-  print((a*a**4*b*u*c).expand())
+  m = Monom(pos=2).prolong(4).prolong(1).prolong(3)**4
+  print(f"{m!r}")
+  print(f"{m}")
+  print(f"{m.df()}")
+  print(f"{m.gf()}")
+
+  m = w*c*c*d**2
+  print(f"{m!r}")
+  print(f"{m}")
+  print(f"{m.gf()}")
+  print(f"{m.df()}")
+
+  m = a*a**4*b*u*c/a/b*c
+  print(f"{m!r}")
+  print(f"{m}")
+  print(f"{m.df()}")
+  print(f"{m.gf()}")
 
   m1 = w*b*c**2
-  print(repr(m1))
-  print(m1)
+  print(f"{m1!r}")
+  print(f"{m1}")
+  print(f"{m1.df()}")
+  print(f"{m1.gf()}")
 
-  print(repr(m1/m1))
-  print(m1/m1)
+  m = m1/m1
+  print(f"{m!r}")
+  print(f"{m}")
 
   m2 = a*e*f**2*Monom(pos=1)
-  print(repr(m2))
+  print(f"{m2!r}")
+  print(f"{m2}")
+  print(f"{m2.df()}")
+  print(f"{m2.gf()}")
 
   print(m1.POTlex(m2))
   print(m1.TOPdeglex(m2))
@@ -269,8 +353,8 @@ if __name__ == '__main__':
   print(m1.divisible(m2))
   print(m2.prolong(0).divisible(m2))
   print(m2.prolong(0).divisibleTrue(m2))
-
   print(m2.nonmult(m2.prolong(0)**3))
+
   try:
     (m2.prolong(0)**3).nonmult(m2)
   except AssertionError:
