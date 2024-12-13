@@ -59,7 +59,8 @@ class Wrap:
 
   def refresh(self, other):
     assert self.poly.lm() == self.lm
-    if self.ansector.degree() < other.ansector.degree():
+    # if self.ansector.degree() < other.ansector.degree():
+    if other.ansector.divisibleTrue(self.ansector):
       other.ansector = self.ansector.copy()
     # if self.lm == other.lm:
     #   if any(k > l for k, l in zip(self.ansector, other.ansector)):
@@ -358,7 +359,7 @@ class Janet:
     draw(self.root, None, 'solid')
 
     mark = gv.node(g, 'mark')
-    gv.setv(mark, 'label', f'<<B>#Janet = {self.count}<BR/>HP_{{{deg}}} = {self.HP()}</B>>')
+    gv.setv(mark, 'label', f'<<B>#Janet = {self.count()}<BR/>HP_{{{deg}}} = {self.HP()}</B>>')
     gv.setv(mark, 'shape', 'plaintext')
     gv.setv(mark, 'fontsize', '12')
     gv.layout(g, 'dot')
