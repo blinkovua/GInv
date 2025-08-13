@@ -8,19 +8,71 @@ class Q(list):
     assert len(args) <= 1
     super().__init__(*args)
     heapq.heapify(self)
+    for w in self:
+      w.poly.cancel()
     self.crit1 = 0
     self.crit2 = 0
 
   def push(self, w):
     if isinstance(w, Wrap):
+      w.poly.cancel()
       heapq.heappush(self, w)
     else:
       for i in w:
         assert isinstance(i, Wrap)
+        i.poly.cancel()
         heapq.heappush(self, i)
 
   def pop(self):
     return heapq.heappop(self)
+
+  def reduceAll(self, invdiv):
+    i = 0
+    while i < len(self):
+      w = self[i]
+      w1 = invdiv.findWrap(w.lm)
+      if not w1:
+        i += 1
+      else:
+        if w.crit1(w1):
+          self.crit1 += 1
+          del self[i]
+        elif w.crit2(w1):
+          self.crit2 += 1
+          del self[i]
+        else:
+          w.refresh(w1)
+          w.poly.NFhead(invdiv)
+          if not w.poly:
+            del self[i]
+          else:
+            w.update()
+            w.poly.pp()
+            i += 1
+    r = []
+    if self:
+      heapq.heapify(self)
+      # while not r or (self and r[0].lm == self[0].lm):
+      #   w = self.pop()
+      #   w.poly.NFtail(invdiv)
+      #   w.poly.pp()
+      #   r.append(w)
+      # i = 1
+      # while i < len(r):
+      #   r[i].poly.reduce(r[0].poly)
+      #   if not r[i].poly:
+      #     del r[i]
+      #   else:
+      #     r[i].update()
+      #     i += 1
+      # # print(r)
+      # if len(r) == 1:
+      #   r = r[0]
+      # else:
+      #   for w in r:
+      #     heapq.heappush(self, w)
+      r = self.pop()
+    return r
 
   def reduceMinDegree(self, invdiv):
     d, r = 0, []
@@ -86,6 +138,48 @@ class Q(list):
 
     return res
 
+def ginvMin(pset, invdiv, level=0):
+  assert pset
+  if type(pset[0]) == Poly:
+    tp = 0
+  elif type(pset[0]) == PolyDiff:
+    tp = 1
+  elif type(pset[0]) == PolySchem:
+    tp = 2
+    
+  t = time.time()
+  q = Q(Wrap(p) for p in pset)
+  while True:
+    m = q[0].lm if q else None
+    if level > 0:
+      if m:
+        print(f"prolong {m}")
+        q.push(invdiv.prolongMonom(m))
+      else:
+        print("prolongAll")
+        q.push(invdiv.prolongAll())
+    if not q:
+      break
+    r = q.reduceAll(invdiv)
+    if r:
+      if tp == 1:
+        r.poly.NFtail(invdiv)
+        r.poly.pp()
+      if level > 0:
+        if tp == 0:
+          print(f"{r.lm}")
+        if tp == 1:
+          print(f"{r.lm.df()}")
+        if tp == 2:
+          print(f"{r.lm.T()}")
+      q.push(invdiv.insert([r]))
+
+      for w in invdiv:
+        w.poly.NFtail(invdiv)
+        w.poly.pp()
+
+  return time.time() - t, q.crit1, q.crit2
+
 def ginvBlockLow(pset, invdiv, level=0):
   assert pset
   assert Monom.cmp == Monom.TOPdeglex
@@ -93,6 +187,8 @@ def ginvBlockLow(pset, invdiv, level=0):
     tp = 0
   elif type(pset[0]) == PolyDiff:
     tp = 1
+  elif type(pset[0]) == PolySchem:
+    tp = 2
 
   t = time.time()
   q = Q(Wrap(p) for p in pset)
@@ -104,7 +200,7 @@ def ginvBlockLow(pset, invdiv, level=0):
     if i == 0 and j == 0:
       break
     if j == 0 or 0 < i < j:
-      q.push(invdiv.prolong(i))
+      q.push(invdiv.prolongDeg(i))
     res = q.reduceMinDegree(invdiv)
     if res:
       res = q.autoReduce(res)
@@ -117,6 +213,8 @@ def ginvBlockLow(pset, invdiv, level=0):
           print(", ".join(f"{w.lm}" for w in res))
         if tp == 1:
           print(", ".join(f"{w.lm.df()}" for w in res))
+        if tp == 2:
+          print(", ".join(f"{w.lm.T()}" for w in res))
       q.push(invdiv.insert(res))
 
       for w in invdiv:

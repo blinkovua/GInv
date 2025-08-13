@@ -1,6 +1,6 @@
 import sympy
 
-from poly import *
+from polynomial import *
 
 class Wrap:
   id = 0
@@ -173,7 +173,7 @@ class Janet:
     if self.root:
       assert self.pos == m.position()
       r, d, v = self.root, m.degree(), 0
-      while r and d:
+      while r and d >= 0: # TODO
         if len(r)-1 <= m[v] and isinstance(r[-1], Wrap):
             self.__reduction += 1
             return r[-1]
@@ -208,6 +208,7 @@ class Janet:
 
   def __insert(self, w, lst):
     assert isinstance(w, Wrap)
+    assert not self.findWrap(w.lm)
 
     if not self.root:
       self.pos = w.lm.position()
@@ -240,8 +241,6 @@ class Janet:
         for i in range(w.lm[v]+1 - len(r)):
           r.append([])
         assert len(r)-1 == w.lm[v]
-      if not isinstance(r[w.lm[v]], list):
-        print(r[w.lm[v]])
       assert isinstance(r[w.lm[v]], list)
 
       if d > w.lm[v]:
@@ -282,7 +281,7 @@ class Janet:
           d = min(d, w.degree()) if d else w.degree()
     return d
 
-  def prolong(self, d):
+  def prolongDeg(self, d):
     r = []
     for w in self:
       if d == 0 or d == w.degree():
@@ -291,6 +290,22 @@ class Janet:
             r.append(Wrap(w, v))
     return r
 
+  def prolongMonom(self, m):
+    r = []
+    for w in self:
+      for v, f in enumerate(w.nonmult):
+        if f and not w.prolong[v] and w.lm.prolong(v) <= m:
+          r.append(Wrap(w, v))
+    return r
+
+  def prolongAll(self):
+    r = []
+    for w in self:
+      for v, f in enumerate(w.nonmult):
+        if f and not w.prolong[v]:
+          r.append(Wrap(w, v))
+    return r
+  
   def reduction(self):
     return self.__reduction
 
@@ -423,27 +438,43 @@ class Forest(list):
   def degMinProlong(self):
     d = 0
     for idiv in super().__iter__():
-       if d == 0:
-         d = idiv.degMinProlong()
-       else:   
-         d = min(d, idiv.degMinProlong())
+      d1 = idiv.degMinProlong()
+      if d1 > 0:
+        if d == 0:
+          d = d1
+        else:
+          d = min(d, d1)
     return d
 
-  def prolong(self, d):
+  def prolongDeg(self, d):
     r = []
     for idiv in super().__iter__():
-      r.extend(idiv.prolong(d))
+      r.extend(idiv.prolongDeg(d))
     return r
 
+  def prolongMonom(self, m):
+    r = []
+    for idiv in super().__iter__():
+      r.extend(idiv.prolongMonom(m))
+    return r
+
+  def prolongAll(self):
+    r = []
+    for idiv in super().__iter__():
+      r.extend(idiv.prolongAll())
+    return r
+  
   def reduction(self):
     return sum(idiv.reduction() for idiv in super().__iter__())
 
   def count(self):
     return sum(idiv.count() for idiv in super().__iter__())
   
-  def HP(self):
+  def HP(self, verge=-1):
     hp = HilbertPoly(len(Monom._Monom__var), init=False)
-    for h in super().__iter__():
+    for k, h in enumerate(super().__iter__()):
+      if k == verge:
+        break
       hp += h.HP()
     return hp
       
