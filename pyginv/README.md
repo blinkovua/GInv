@@ -16,11 +16,11 @@ An alternative approach to the Gröbner basis method was formed during the inves
 
 The difference between Gröbner bases and their extension, the involutive basis, is best demonstrated in Figure 1. In the left figure, the cones of divisible monomials are shown in different colors. As a result of fixing the monomial ordering in the general polynomial case, at the intersection points of the cones, it is necessary to compute S-polynomials relative to the current basis and add them to the basis. Upon completion of this process, a Gröbner basis in the chosen order will be obtained. Now, to determine membership, it is sufficient to compute the normal form of the polynomial relative to the current basis. In this case, the sequence of reductions is unimportant because all S-polynomials already belong to the basis. In this specific case, it is easy to calculate the Hilbert polynomial HP₈ = 3s + 10, which consists of three one-dimensional cones x^s, y^s, xy^s and a number of monomials that do not fall into these cones: 1_ℳ, x, y, x², xy, ... Consequently, the formula HP₈ = 3s + 10 is chosen such that it gives the exact number of monomials up to total degree s ≥ 8 that have no divisor among the leading monomials of the basis.
 
-![Figure 1](divfull)
+![Figure 1](divfull.png)
 
-![Figure 2](divjanet)
+![Figure 2](divjanet.png)
 
-![Figure 3](divjanetfull)
+![Figure 3](divjanetfull.png)
 
 In the general case, such a calculation is difficult to perform. If the cones did not intersect, the computation of the Hilbert polynomial could be represented as the difference between the cone of the unit monomial 1_ℳ and the sum over all cones formed by the leading monomials of the basis.
 
