@@ -160,3 +160,153 @@ for syz in syzygy:
     in zip(syz, P)).expand(), end=" ")
 0 0 0
 ```
+
+## Finding Roots
+
+For zero-dimensional ideals, it is possible to efficiently find all roots of a system of polynomials, taking into account their multiplicity. Consider a simple example:
+
+`{x^3 - y^2 + z - 1, y^3 - z^2 + x - 1, z^3 - x^2 + y - 1}`
+
+with the variable ordering $x \succ y \succ z$. Under the `deglex` term order, and according to Buchberger's first criterion [1], this set is a Gröbner basis. The minimal involutive Janet basis already contains 13 elements, represented here only by their leading monomials:
+
+`{z^3, y z^3, y^2 z^3, y^3, x z^3, x y z^3, x y^2 z^3, x y^3, x^2 z^3, x^2 y z^3, x^2 y^2 z^3, x^2 y^3, x^3}`.
+
+By applying the static function `gradus` of the `Monom` class on line 3, one can iterate by total degree to find all monomials that are not divisible by any leading monomial of the system.
+
+```python
+rows, i = {}, 0
+for d in range(8):
+  for m in Monom.gradus(d):
+    if not test.find(m):
+      print(f"{m!r}", end=", ")
+      rows[m] = i
+      i += 1
+```
+
+Line 5 prints these monomials in their internal representation as a list of variable exponents. Their number exactly equals the value of the Hilbert polynomial $HP_{7}= 27$.
+
+```
+[0 0 0],
+[1 0 0], [0 1 0], [0 0 1],
+[2 0 0], [1 1 0], ... , [0 0 2],
+[2 1 0], [2 0 1], ... , [0 2 1], [0 1 2],
+[2 2 0], [2 1 1], ... , [0 2 2],
+[2 2 1], [2 1 2], [1 2 2],
+[2 2 2],
+```
+
+As a result, after performing all reductions with respect to the Gröbner basis (line 17, call to the `NF` function), for monomials in the variable $x$ up to degree 26 inclusive, we can only obtain monomials listed on lines 8-14. This allows us to assign each row of the matrix to $x^d$. Similarly, to construct column `b` on lines 19-21, we assign the monomial $x^27$.
+
+```python
+A=[[0 for k in range(27)] for i in range(27)]
+for d in range(27):
+  for m, c in (x**d).NF(test):
+    A[rows[m]][d] = c
+b = [0 for i in range(27)]
+for m, c in (x**27).NF(test):
+  b[rows[m]] = c
+
+A, b = sympy.Matrix(A), sympy.Matrix(b)
+s = sympy.linsolve((A, b)).args[0]
+p = x**27-sum(x**d*s[d] for d in range(27))
+```
+
+Solving the resulting system in matrix form using SymPy, we find the form of the polynomial in the given ideal involving only one variable:
+
+$x^{27} - 9 x^{24} + 29 x^{21} + 6 x^{19} - 53 x^{18} + 22 x^{17} - 63 x^{16} + 96 x^{15} - 149 x^{14} + 242 x^{13} - 261 x^{12} + 484 x^{11} - 545 x^{10} + 740 x^{9} - 908 x^{8} + 972 x^{7} - 1220 x^{6} + 1047 x^{5} - 1045 x^{4} + 943 x^{3} - 535 x^{2} + 422 x - 216$
+
+The roots of this polynomial can be found using the `nroots` function from the SymPy computer algebra system.
+
+A more efficient computation can be organized using the matrix representation of variables to numerically solve the eigenvalue problem. On lines 26-32, using the relation that multiplying the monomials from lines 8-14 by a variable reduces again to this set of monomials with respect to the Gröbner basis, we construct the matrix for this variable.
+
+```python
+dct = [{}, {}, {}]
+for k, v in rows.items():
+  for i in range(3):
+    for m, c in Poly(Monom(i)*k).NF(test):
+      if c:
+        dct[i][rows[m], v] = c
+X, Y, Z = (SparseMatrix(27, 27, dct[i]) for i in range(3))
+X*Y == Y*X and X*Z == Z*X and Z*Y == Y*Z
+True
+```
+
+The matrices have many zero elements and, despite not being symmetric, commute with each other (lines 34-35).
+
+Using the SciPy library (https://scipy.org/) on lines 36-43, one can easily compute the eigenvalues, which will correspond exactly to the roots of the original system [2].
+
+```python
+import numpy as np
+from scipy import linalg
+
+A = np.empty((27, 27), dtype=np.float64)
+for j in range(27):
+  for k in range(27):
+    A[j][k] = X[j, k]
+print(linalg.eigvals(A))
+```
+
+The computation of the 7th cyclic roots in PyGInv takes 1225 seconds. This system of polynomials has 924 roots counting multiplicity. The calculation of the matrix representation takes 366 seconds. The matrix densities are as follows [69694, 68288, 66858, 65585, 62887, 51490, 18216], which corresponds to the percentages [8%, 8%, 8%, 8%, 7%, 6%, 2%]. The eigenvalue calculation takes only 19 seconds.
+
+## Graph Coloring
+
+Using Rabinowitsch's trick [1] to represent inequalities by introducing additional variables, Groebner bases can be used to solve the problem of coloring graphs with *n* colors. For example, in the case of three colors, the colors for adjacent vertices can be defined by the following polynomials:
+
+```python
+Monom.cmp = Monom.POTlex
+k, y, x = Poly.init('k, y, x'.split(', '))
+test = Janet()
+res = ginvMin((
+x*(x+1)*(x-1),
+y*(y+1)*(y-1),
+(x - y)*k - 1,\
+), test, level=1)
+```
+
+In the last polynomial (line 7), the additional variable *k* cannot be zero, meaning the colors *x* and *y* are different. The Groebner basis, after eliminating the polynomial with *k*, has the following form:
+`x³ - x`, `y² + yx + x² - 1`,
+`2k - 3yx² + 2y - 2x`, where the second polynomial is the desired separating polynomial for the values *x* and *y*.
+
+Using these relations, all adjacent vertices can be described, and by constructing a Groebner basis, all possible colorings of a given graph can be found.
+
+Similarly, for example, for five colors, the following system can be defined:
+`x(x+1)(x-1)(x+2)(x-2)`, `y(y+1)(y-1)(y+2)(y-2)`, `(x - y)k - 1`, and the form of the separating polynomial can be easily obtained:
+`y⁴ + y³x + y²x² - 5y² + yx³ - 5yx + x⁴ -5x² + 4`.
+
+Let's define the graph shown in Figure 6 (lines 10-19). Here, the first element of each tuple is a vertex, followed by its connections to other vertices.
+
+```python
+graph = (
+(1, 2, 5, 8, 10),\
+(2, 3, 6, 9),\
+(3, 4, 7, 10),\
+(4, 5, 8, 11),\
+(5, 6, 12),\
+(6, 7, 11),\
+(7, 8, 12),\
+(8, 9),\
+(9, 10, 12),\
+(10, 11))
+```
+
+In Python, it is very convenient to work with strings. As a result, the code below generates all the required polynomials for coloring the graph in Figure 6 with three colors.
+
+```python
+var = [f"x{vs}" for vs in range(1, 13)]
+eqs = [f"{v}**3 + {v}*-1" for v in var]
+for vs in graph:
+  w = vs[0]
+  for v in vs[1:]:
+    eqs.append(f"""x{w}**2*-1 + x{w}*x{v}*-1
+      + x{v}**2*-1 + 1""")
+```
+
+Constructing the Groebner basis in PyGinv took approximately 8 seconds.
+The Hilbert polynomial indicates 6 distinct solutions. Let's choose `x₁₂ - 1` as a root.
+The construction takes practically zero time, but a choice between two solutions remains.
+By setting `x₁₀ + 1`, exactly one solution is constructed, as shown in Figure 6.
+
+<center>
+![Figure 6](color)
+Figure 6
+</center>
