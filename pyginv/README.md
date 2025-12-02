@@ -306,7 +306,362 @@ The Hilbert polynomial indicates 6 distinct solutions. Let's choose `x₁₂ - 1
 The construction takes practically zero time, but a choice between two solutions remains.
 By setting `x₁₀ + 1`, exactly one solution is constructed, as shown in Figure 6.
 
-<center>
-![Figure 6](color)
+![Figure 6](color.png)
 Figure 6
-</center>
+
+## DIFFERENTIAL EQUATIONS
+
+The construction of Gröbner bases in the differential case largely coincides with the case of polynomials and modules. On line 7, the wrapper function `df` is introduced for specifying derivatives (monomials) in PyGinv. Since after executing line 4, the variables `x1`, `x2`, `x3` are ordinary SymPy variables, and the dependent variable `u` is a function, the identification with PyGinv is determined by `df`, where it is important that the variable names as strings match.
+
+```python
+Monom.cmp = Monom.TOPdeglex
+var = 'x1, x2, x3'.split(', ')
+fun = 'u'.split(', ')
+var, fun = PolyDiff.init(var, fun)
+x1, x2, x3 = var
+u = fun[0]
+df = PolyDiff.df
+diablo = Janet()
+res = ginvBlockLow((
+df(u, x1, 2) + x3*df(u, x2, 2),\
+df(u, x3, 2)), \
+diablo, level=1)
+```
+
+The system presented above is an example of a Janet system, where if we view $x_3$ as a parameter, the constraint imposed on it by the equation on line 11 leads to a finite number of constants in the solution $HP_{5}=12$.
+
+The minimal involutive basis is presented below.
+
+```python
+df(u, x3, 2)
+df(u, x2, x3, 2)
+df(u, x2, 2, x3)
+df(u, x2, 3, x3)
+df(u, x2, 4)
+df(u, x1, x3, 2)
+df(u, x1, x2, x3, 2)
+df(u, x1, x2, 2, x3)
+df(u, x1, x2, 3, x3)
+df(u, x1, x2, 4)
+df(u, x1, 2) + df(u, x2, 2)*x3
+```
+
+Using the same technique as in the polynomial case, we find all derivatives that have no divisors among the leading derivatives of the basis; there are exactly 12 of them.
+
+```python
+rows, i = {}, 0
+for d in range(5):
+  for m in Monom.gradus(d, pos=0):
+    if not diablo.find(m):
+      print(f"${m.df_latex()}$", end=", ")
+      rows[m] = i
+```
+
+These derivatives can be used
+${u}$,
+${u}_{{x_1}}$, ${u}_{{x_2}}$, ${u}_{{x_3}}$,
+${u}_{{x_1} {x_2}}$, ${u}_{{x_1} {x_3}}$, ${u}_{{x_2} {x_2}}$, ${u}_{{x_2} {x_3}}$,
+${u}_{{x_1} {x_2} {x_2}}$, ${u}_{{x_1} {x_2} {x_3}}$, ${u}_{{x_2} {x_2} {x_2}}$,
+${u}_{{x_1} {x_2} {x_2} {x_2}}$
+to find a solution of the original system in the form of a finite Taylor series, as arbitrary constants
+
+$C_{000} + C_{001} x_{3} + C_{010} x_{2} + C_{011} x_{2} x_{3} + C_{100} x_{1} + C_{101} x_{1} x_{3} + C_{110} x_{1} x_{2} + C_{111} x_{1} x_{2} x_{3} + C_{201} x_{1}^{2} x_{3} - C_{201} x_{2}^{2} + C_{211} x_{1}^{2} x_{2} x_{3} - \frac{C_{211} x_{2}^{3}}{3} + C_{301} x_{1}^{3} x_{3} - 3 C_{301} x_{1} x_{2}^{2} + C_{311} x_{1}^{3} x_{2} x_{3} - C_{311} x_{1} x_{2}^{3}$.
+
+Let us consider the possibility of working with nonlinear differential equations using the example of two-dimensional Navier-Stokes equations for an incompressible fluid. We introduce additional functions to denote the nonlinear parts $u2 = u^2$, $uv = u\cdot v$, $v2 = v^2$ when writing the equations in divergence form. The representation of these equations in SymPy is shown below.
+
+```python
+t, x, y, Re = sympy.symbols('t, x, y, Re')
+u,v,p,u2,uv,v2=(sympy.Function(f)(t,x,y)\
+ for f in 'u,v,p,u2,uv,v2'.split(','))
+eq1 = u.diff(x) + v.diff(y)
+eq2=u.diff(t)+(u2+p-u.diff(x)/Re).diff(x)\
+  + (uv - u.diff(y)/Re).diff(y)
+eq3=v.diff(t) + (uv-v.diff(x)/Re).diff(x)\
+  + (v2 + p - v.diff(y)/Re).diff(y)
+```
+
+Using the static function `diff2poly` on the line for translating from SymPy to PyGInv's internal representation on lines 16-18. Since we have introduced additional functions, which are expressed in terms of the three main ones `u`, `v`, `p`, they must not be accounted for when calculating the Hilbert polynomial. For this, the parameter `verge` has the value 3.
+
+```python
+Monom.cmp = Monom.TOPdeglex
+var = 't, x, y'.split(', ')
+fun = 'u, v, p, u2, uv, v2'.split(', ')
+var, fun = PolyDiff.init(var, fun)
+df = PolyDiff.df
+diff2poly = PolyDiff.diff2poly
+NS = Forest(Janet)
+res = ginvBlockLow([diff2poly(eq)\
+  for eq in (eq1, eq2, eq3)], \
+NS, level=1)
+print(f"HP: {NS.HP(verge=3)}")
+HP: 2s^2 + 6s + 3
+```
+
+As a result, we obtain the following system, in which the introduced additional functions $u2$, $uv$, $v2$ are not included in the leading derivatives of the Gröbner basis.
+
+$$
+\left\lbrace 
+\begin{array}{l}
+\mathbf{{u}_{{x}}} + {v}_{{y}} ,\\
+\mathbf{{v}_{{x} {y}}} - {u}_{{y} {y}} + {u}_{{t}} \mathrm{Re} + {p}_{{x}} \mathrm{Re} + {u2}_{{x}} \mathrm{Re} 
++ {uv}_{{y}} \mathrm{Re} , \\
+\mathbf{{v}_{{x} {x}}} + {v}_{{y} {y}} - {v}_{{t}} \mathrm{Re} - {uv}_{{x}} 
+\mathrm{Re} - {p}_{{y}} \mathrm{Re} 
+- {v2}_{{y}} \mathrm{Re} , \\
+\mathbf{{p}_{{x} {x}} }+ {u2}_{{x} {x}} + 2 {uv}_{{x} {y}} + {p}_{{y} {y}} 
++ {v2}_{{y} {y}}.
+\end{array}
+\right. 
+$$
+
+## Symmetries of Differential Equations
+
+The condition for higher symmetries of the Korteweg–de Vries equation (using shorthand notation, e.g., $u_{xxx} = u_3$) can be written in the following form [1]
+$$
+\begin{cases}
+\mathbf{u_{t}} + 6 u_1 u + u_3 = 0 \\
+\mathbf{u_{\varepsilon}} - F(t, x, u, u_1, u_2, \ldots, u_5) = 0
+\end{cases}
+$$
+
+This form of notation allows one to introduce a constant $\varepsilon$ into an exact solution of the Korteweg–de Vries equation by integrating the second equation.
+
+For the second equation of the system, we introduce the total derivatives of $F$.
+$$
+\begin{aligned}
+\frac{dF}{dt} &= F_t - F_u (6 u_1 u + u_3) - \sum F_{u_{i}} (6 u_1 u + u_3)_i\\
+\frac{dF}{dx} &= F_x + F_u u_1 + \sum F_{u_{i}} u_{i+1}
+\end{aligned}
+$$
+
+The integrability (compatibility) condition for this system can be expressed via the $S$-polynomial (with lexicographic ordering $t \succ x$)
+$$
+(\mathbf{u_{t}} + 6 u_1 u + u_3)_\varepsilon - \mathbf{u_{\varepsilon t}} + \frac{d}{dt}F = 0
+$$
+
+In this last equation, due to the Leibniz differentiation rule, the derivative with respect to $\varepsilon$ enters the integrability condition linearly.
+$$
+6u u_{\varepsilon 1}+ 6u_1 u_{\varepsilon}+ u_{\varepsilon 3} \frac{d}{dt}F = 0
+$$
+
+Furthermore, we can replace $u_{\varepsilon}$ by $F$ using the total derivatives of $F$.
+$$
+6u \frac{d}{dx}F+ 6u_1 F + \frac{d^3}{dx^3}F + \frac{d}{dt}F = 0
+$$
+
+Since $F$ itself does not depend on derivatives higher than the fifth order, we can obtain a system of linear equations for $F$ by equating the coefficients of $u_6$ and $u_7$. In SymPy, all these computations take about 30 lines of code.
+
+As a result, we obtain a system of 5 equations, the first and third of which are very cumbersome:
+$$
+\begin{cases}
+6 f u_{1} + f_{t} + f_{u_1u_1u_1} u_{2}^{3} + \text{88 terms} + 6 f_{x} u,\\
+3 f_{u_1u_5} u_{2} + \text{4 terms} + 3 f_{uu_5} u_{1}, \\
+3 f_{u_1u_1u_5} u_{2}^{2} + \text{29 terms} + 3 f_{uuu_5} u_{1}^{2}, \\
+3 f_{u_1u_5u_5} u_{2} + \text{5 terms} + 3 f_{uu_5u_5} u_{1}, \\
+f_{u_5u_5u_5}.
+\end{cases}
+$$
+
+By constructing a Gröbner basis for the resulting system and refining the form of the solution, the explicit form of the higher symmetries can be found in a few steps.
+
+The first construction yields the following basis (taking 8 seconds to compute in PyGinv):
+* ${f}_{{u_5} {u_5}}$,
+* ${f}_{{u_4}}$,
+* ${f}_{{u_3} {u_5}}$,
+* ${f}_{{u_3} {u_3}}$,
+* ${f}_{{u_2}} - 20u_1 {f}_{{u_5}}$,
+* ${f}_{{u_1} {u_5}}$,
+* ${f}_{{u_1} {u_3}}$,
+* ${f}_{{u_1} {u_1}}$,
+* ${f}_{{u} {u_5}}$,
+* ${f}_{{u} {u_3}} - 10 {f}_{{u_5}}$,
+* ${f}_{{u} {u_1}} - 6 {f}_{{u_3}}$,
+* ${f}_{{u} {u}} - 60u_1 {f}_{{u_5}}$,
+* $-2{f}_{{x}} + \ldots$,
+* $2{f}_{{t}} + \ldots$.
+
+From this, it is clear that the solution must depend linearly on $u_5$, $u_3$, $u_1$, and therefore
+$$
+f = A u_5 + B u_3 + C u_1 + D,
+$$
+where $A, B, C, D$ depend on $t, x, u, u_2$.
+
+The next Gröbner basis yields the following equations:
+* ${A}_{{u_2}}$,
+* ${A}_{{u}}$,
+* ${A}_{{x}}$,
+* ${A}_{{t}}$,
+* ${B}_{{u_2}}$,
+* ${B}_{{u}} 10 {A}$,
+* ${B}_{{x}}$,
+* $2 {B}_{{t}} 2 + 3{D}_{{u}}$,
+* ${C}_{{u_2}} -20 {A}$,
+* ${C}_{{u}} 1 - 6 {B}$,
+* $-2{C}_{{x}} + {D}_{{u}}$,
+* ${C}_{{t}} + 3 u {D}_{{u}} + 6{D}$,
+* ${D}_{{u_2}}$,
+* ${D}_{{u} {u_2}}$,
+* ${D}_{{u} {u}}$,
+* ${D}_{{x}}$,
+* ${D}_{{t}}$.
+
+These equations are easily integrated:
+$$
+\begin{aligned}
+A &= A_0, \\
+B &= 10 A_0 u - 3 t D_1/2 + B_0, \\
+C &= 20 A_0 u_2 + x D_1/2 + 30 A_0 u^2 - 18 t D_1/2 u + 6 B_0 u - 6 t D_0 + C_0, \\
+D &= D_1 u + D_0 ,
+\end{aligned}
+$$
+using the constants $A_0$, $B_0$, $D_0$, $D_1$, $C_0$.
+
+Collecting terms corresponding to arbitrary constants, we obtain the following symmetries:
+$$
+\begin{cases}
+30 u^{2} u_{1} + 10 u u_{3} + 20 u_{1} u_{2} + u_{5},\\
+6 u u_{1} + u_{3},\\
+- 6 t u_{1} + 1,\\
+- 9 t u u_{1} - \frac{3 t u_{3}}{2} + u + \frac{u_{1} x}{2},\\
+u_{1}.
+\end{cases}
+$$
+
+Considering that $u_3 = -u_t - 6u u_1$, the second and fourth equations can be rewritten in the form of classical symmetries:
+$$
+\begin{cases}
+30 u^{2} u_{1} + 10 u u_{3} + 20 u_{1} u_{2} + u_{5},\\
+-u_t,\\
+- 6 t u_{1} + 1,\\
+\frac{3 t u_{t}}{2} + u + \frac{u_{1} x}{2},\\
+u_{1}.
+\end{cases}
+$$
+
+
+## Difference Schemes
+
+In the works [Gerdt:2006:GBG, Blinkov:2006:GRS, Blinkov:2017], an algorithmic approach based on computer algebra is applied to construct new finite-difference schemes for equations of various types. All calculations presented in these and other works can be reproduced in PyGInv.
+
+As an example, consider the construction of compact difference schemes [Gulin] using fourth-order accuracy schemes:
+
+$$
+\frac{1}{6}f'_{i+1} + \frac{2}{3}f'_{i} + \frac{1}{6}f'_{i-1} = \frac{f_{i+1}-f_{i-1}}{2h}, \tag{*}
+$$
+$$
+\frac{1}{12}f''_{i+1} + \frac{5}{6}f''_{i} + \frac{1}{12}f''_{i-1} = \frac{f_{i+1}-2f_{i}+f_{i-1}}{h^2}.
+$$
+
+Let us construct a difference scheme for a boundary value problem of a second-order ODE with a small parameter $\varepsilon$:
+
+$$
+\varepsilon f''_{i} + \left(1 + \varepsilon^{2}\right)f'_{i} +
+ \left(1 - \varepsilon^{2}\right)f_{i}=0.
+$$
+
+Line 4 shows the shift operator `T`.
+
+```
+Monom.cmp = Monom.POTdeglex
+var = 'j'.split(', ')
+fun = 'fxx, fx, f'.split(', ')
+T = PolySchem.T
+var, fun = PolySchem.init(var, fun)
+j = var[0]
+fxx, fx, f = fun
+BL = Forest(Janet)
+res = ginvMin((\
+(T(fx,j,2)/6 + 2*T(fx,j)/3 + T(fx)/6)\
+  - (T(f,j,2) - T(f))/(2*h),\
+(T(fxx,j,2)/12+5*T(fxx,j)/6+T(fxx)/12)\
+  - (T(f,j,2) - 2*T(f,j) + T(f))/h**2,\
+eps*T(fxx)+eps0*T(fx)+eps1*T(f)), BL)
+```
+
+The constructed basis immediately yields a difference scheme for the left boundary:
+
+$$
+\begin{aligned}
+6 (1 + {\varepsilon^2}) {f'}_{{j}} &+ (1 + {\varepsilon^2})\frac{ 3 {f}_{{j} + 1} - 30 {f}_{{j} + 2} - 3 {f}_{{j} + 3} + 30 {f}_{{j}}}{h} + {} \\
+&+ (1 - {\varepsilon^2}) \left(- 41 {f}_{{j} + 1} - 14 {f}_{{j} + 2} - {f}_{{j} + 3} - 4 {f}_{{j}}\right) + {} \\
+&+ \varepsilon \frac{84 {f}_{{j} + 1} - 24 {f}_{{j} + 2} - 12 {f}_{{j} + 3} - 48 {f}_{{j}}}{h^{2}}=0,
+\end{aligned}
+$$
+
+Applying continuation (shifting) along `j`, we obtain a scheme for interior points:
+
+$$
+\begin{aligned}
+(1 + {\varepsilon^2}) {f'}_{{j} + 1} &+ 3(1 + {\varepsilon^2})\frac{ {f}_{{j} + 2} - {f}_{{j}}}{h} + {} \\
+&+ (1 - {\varepsilon^2}) \left({f}_{{j} + 2} + 10 {f}_{{j} + 1} + {u}_{{j}}\right) + {} \\
+&+ 12\varepsilon\frac{ {f}_{{j} + 2} - 2{f}_{{j} + 1}  + {f}_{{j}}}{h^{2}}=0,
+\end{aligned}
+$$
+
+and for the right point of the computational interval:
+
+$$
+\begin{aligned}
+6 (1 + {\varepsilon^2}) {f'}_{{j} + 3} &+ (1 + {\varepsilon^2})\frac{ 30 {f}_{{j} + 1} - 3 {f}_{{j} + 2} - 30 {f}_{{j} + 3} + 3 {f}_{{j}}}{h} + {} \\
+&+ (1 - {\varepsilon^2}) \left(- 14 {f}_{{j} + 1} - 41 {f}_{{j} + 2} - 4 {f}_{{j} + 3} - {f}_{{j}}\right) + {} \\
+&+ \varepsilon\frac{ - 24 {f}_{{j} + 1} + 84 {f}_{{j} + 2} - 48 {f}_{{j} + 3} - 12 {f}_{{j}}}{h^{2}}=0.
+\end{aligned}
+$$
+
+Adding the relation (*) to the obtained difference schemes yields a closed system of equations. Numerical calculations showed good agreement with the exact solution for small values of $\varepsilon$.
+
+The following code allows constructing a compact difference scheme for the Poisson equation.
+
+```
+var = 'j, k'.split(', ')
+fun = 'ux, uy, u, f'.split(', ')
+var, fun = PolySchem.init(var, fun)
+T = PolySchem.T
+j, k = var
+ux, uy, u, f = fun
+laplace = Forest(Janet)
+res = ginvMin((
+(T(uxx,j,2)/12+5*T(uxx,j)/6+T(uxx)/12)*\
+  h**2 - (T(u,j,2) - 2*T(u,j) + T(u)),\
+(T(uyy,k,2)/12+5*T(uyy,k)/6+T(uyy)/12)*\
+  h**2 - (T(u,k,2) - 2*T(u,k) + T(u)),\
+T(uxx) + T(uyy) - T(f)), \
+laplace, level=1)
+```
+
+As a result, we obtain a compact scheme of 4th order accuracy:
+
+$$
+(- 20 {u}_{{j} + 1\, {k} + 1} + 4 {u}_{{j} + 1\, {k} + 2} + 4 {u}_{{j} + 1\, {k}} + 4 {u}_{{j} + 2\, {k} + 1} + {u}_{{j} + 2\, {k} + 2} + {u}_{{j} + 2\, {k}} + 4 {u}_{{j}\, {k} + 1} + {u}_{{j}\, {k} + 2} + {u}_{{j}\, {k}})/h^{2}
+- (100 {f}_{{j} + 1\, {k} + 1} + 10 {f}_{{j} + 1\, {k} + 2} + 10 {f}_{{j} + 1\, {k}} + 10 {f}_{{j} + 2\, {k} + 1} + {f}_{{j} + 2\, {k} + 2} + {f}_{{j} + 2\, {k}} + 10 {f}_{{j}\, {k} + 1} + {f}_{{j}\, {k} + 2} + {f}_{{j}\, {k}})/{24} =0.
+$$
+
+## Conclusion
+
+Currently, some modules of the PyGInv package are used to construct the first differential approximation (FDA) by building Gröbner bases for series. This has made it possible to effectively construct FDA for Runge-Kutta methods, multistep Adams-Bashforth and Adams-Moulton methods, as well as difference schemes. In the future, it is planned to integrate FDA calculation into PyGInv as a separate module.
+
+## References
+
+[Gordan:1900:IFB] **Gordan P.** Journal de Mathématiques Puves et Appliqués // Journal de Mathématiques Puves et Appliqués. 1900. N. 1. P. 141–156.
+
+[Macaulay:1927:SPE] **Macaulay F.S.** Some properties of enumeration in the theory of modular systems // Proc. London Math. Soc. 1927. V. 26. P. 531–555. DOI: 10.1112/plms/s2-26.1.531
+
+[Croebner:1939:UDE] **Gröbner W.** Über die Eliminationstheorie // Monatsh. der Math. 1939. V. 54. P. 71–78.
+
+[BUCHBERGER2006475] **Buchberger B.** Bruno Buchberger’s PhD thesis 1965: An algorithm for finding the basis elements of the residue class ring of a zero dimensional polynomial ideal // Journal of Symbolic Computation. 2006. V. 41. N. 3. P. 475–511. DOI: 10.1016/j.jsc.2005.09.007
+
+[Cartan:1899:SCE] **Cartan E.** Sur certaines expressions différentielles et le problème de Pfaff // Annales scientifiques de l'École Normale Supérieure Sér. 3. 1899. N. 16. P. 239–332.
+
+[Riquier:1910:SED] **Riquier C.** Les Systèmes d'Equations aux Dérivées Partielles. Gauthier-Villars, Paris. 1910.
+
+[Janet:1920:SED] **Janet M.** Systèmes d’équations aux dérivées partielles // Journals de mathématiques, 8e série. 1920. N. 3. P. 65–151.
+
+[Zharkov:1996:IAI] **Zharkov A.Yu., Blinkov Yu.A.** Involution approach to investigating polynomial systems // Mathematics and Computers in Simulation. 1996. V. 42. N. 4-6. P. 323–332. DOI: 10.1016/S0378-4754(96)00006-7
+
+[Gerdt:1998:IBP] **Gerdt V.P, Blinkov Yu.A.** Involutive Bases of Polynomial Ideals // Mathematics and Computers in Simulation. 1998. V. 45. N. 4-6. P. 519–542. DOI: 10.1016/S0378-4754(97)00127-4
+
+[Gerdt:1998:MIB] **Gerdt V.P, Blinkov Yu.A.** Minimal Involutive Bases // Mathematics and Computers in Simulation. 1998. V. 45. N. 4-6. P. 543–560. DOI: 10.1016/S0378-4754(97)00128-6
+
+[Blinkov:2008:SSK] **Blinkov Yu.A., Gerdt V.P.** Specialized computer algebra system GINV // Programming and Computer Software. 2008. Vol. 34. No. 2. P. 67–80. (Translation of Russian original)
+
+[Blinkov:2024:ROP] **Blinkov Yu.A., Salpagaro
