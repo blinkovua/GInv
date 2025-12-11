@@ -153,7 +153,7 @@ class Monom(tuple):
           r.append(f"{{{Monom.__var[i]}}}")
         else:
           r.append(f"{{{Monom.__var[i]}}} + {d}")
-      m = "\, ".join(r)
+      m = r"\, ".join(r)
       return f"{{{Monom.__fun[self.__pos]}}}_{{{m}}}"
 
   def position(self):
@@ -170,8 +170,8 @@ class Monom(tuple):
     assert self.__pos == -1 or other.__pos == -1 or self.__pos == other.__pos
     return Monom(min(i, j) for i, j in zip(self, other))
 
-  def __nonzero__(self):
-    return self.__pos >= 0 or sum(self) > 0
+  # def __nonzero__(self):
+  #   return self.__pos >= 0 or sum(self) > 0
 
   def __bool__(self):
     return self.__pos >= 0 or sum(self) > 0

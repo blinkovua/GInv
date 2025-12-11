@@ -165,9 +165,9 @@ class Janet:
     self.__reduction = 0
     self.__count = 0
     self.root = []
-    
-  def is_forest(self):
-    return False
+
+  def clear(self):
+    self.root.clear()
 
   def findWrap(self, m):
     if self.root:
@@ -282,9 +282,10 @@ class Janet:
     return d
 
   def prolongDeg(self, d):
+    assert d > 0
     r = []
     for w in self:
-      if d == 0 or d == w.degree():
+      if d <= w.degree():
         for v, f in enumerate(w.nonmult):
           if f and not w.prolong[v]:
             r.append(Wrap(w, v))
@@ -305,6 +306,36 @@ class Janet:
         if f and not w.prolong[v]:
           r.append(Wrap(w, v))
     return r
+
+  # def setNonmut(self, m):
+  #   def setnm(r):
+  #     if r:
+  #       for n in r[:-1]:
+  #         setnm(n)
+  #       if isinstance(r[-1], Wrap):
+  #         r[-1].nonmult[r[-1].lm.nonmult(m)] = True
+  #       else:
+  #         setnm(n)
+  #   setnm(self.root)
+  # def setNonmut(r, v):
+  #     if r:
+  #       for n in r[:-1]:
+  #         setNonmut(n, v)
+  #       if isinstance(r[-1], Wrap):
+  #         r[-1].nonmult[v] = True
+  #       else:
+  #         setNonmut(r[-1], v)
+
+
+  def isInvolutive(self):
+    for w in self:
+      for v, f in enumerate(w.nonmult):
+        if f:
+          p = w.poly.prolong(v)
+          p.NFhead(self)
+          if p:
+            return False
+    return True
   
   def reduction(self):
     return self.__reduction
@@ -313,6 +344,8 @@ class Janet:
     return self.__count
     
   def HP(self):
+    if not self.root:
+      return HilbertPoly(len(Monom._Monom__var), init=False)
     hp = HilbertPoly(len(Monom._Monom__var))
     for w in self:
       hp -= CombRepet(w.multi() + 1, w.degree())
@@ -411,8 +444,12 @@ class Forest(list):
       self.append(InvDiv())
 
   def is_forest(self):
+    for idiv in super().__iter__():
+      idiv.clear()
+
+  def is_forest(self):
     return True
-  
+
   def findWrap(self, m):
     return self[m.position()].findWrap(m) if m.position() >= 0 else None
   
@@ -463,7 +500,17 @@ class Forest(list):
     for idiv in super().__iter__():
       r.extend(idiv.prolongAll())
     return r
-  
+
+  def isInvolutive(self):
+    for w in self:
+      for v, f in enumerate(w.nonmult):
+        if f:
+          p = w.poly.prolong(v)
+          p.NFhead(self)
+          if p:
+            return False
+    return True
+
   def reduction(self):
     return sum(idiv.reduction() for idiv in super().__iter__())
 
@@ -482,19 +529,16 @@ if __name__ == '__main__':
   from pprint import pprint
   sympy.init_printing()
 
-  var = ['a', 'b', 'c', 'd', 'e', 'f']
-  fun = ['u', 'v', 'w']
-  Monom.init(var, fun)
+  var = 'a, b, c, d, e'.split(', ')
+  fun = 'u, v, w'.split(', ')
+  var, fun = Poly.init(var, fun)
+  a, b, c, d, e = var
+  u, v, w = fun
 
   Monom.cmp = Monom.POTlex
 
-  for i, g in enumerate(var):
-    globals()[g] = Poly(Monom(i))
-  for i, g in enumerate(fun):
-    globals()[g] = Poly(Monom(pos=i))
-
   alpha, beta, tau = sympy.symbols('alpha, beta, tau', real=True)
-  h = u*c**5 + f*a*b*tau*1236537 + d*alpha
+  h = u*c**5 + e*a*b*tau*1236537 + d*alpha
   print(h)
   print(f"{h!r}")
 
@@ -505,51 +549,46 @@ if __name__ == '__main__':
 
   print(w1)
   print()
-  print(w2)
-
-  print(repr(w1))
+  print(f"{w1}")
   print()
-  print(repr(w2))
+  print(f"{w1!r}")
+
+  print(w2)
+  print()
+  print(f"{w2}")
+  print()
+  print(f"{w2!r}")
 
   print(CombRepet(5))
   print(CombRepet(5, 2))
   for i in range(7):
     print(i, CombRepet(6, 3).subs(i))
 
-  var = ['a', 'b', 'c', 'd', 'e']
-  fun = []
-  Monom.init(var, fun)
-  for i, g in enumerate(var):
-      globals()[g] = Poly(Monom(i))
-
+  var = 'a, b, c, d, e'.split(', ')
+  var = Poly.init(var)
+  a, b, c, d, e = var
   pommaret = Janet()
   q = pommaret.insert(Wrap(p) for p in (\
   a**2, a*b, b**2, a*c, b*c, c**2))
   assert q == []
   pommaret.saveImage('pommaret.pdf', level=3)
 
+  print(pommaret.find(Monom((0, 3, 3, 0, 0))))
+
   assert pommaret.degMinProlong() == 2
-  q = pommaret.prolong(2)
+  q = pommaret.prolongDeg(2)
   print(len(q))
-  print([w for w in q if not pommaret.find(w.lm)])
+  [w for w in q if not pommaret.find(w.lm)]
 
-  var = ['a', 'b', 'c', 'd']
-  fun = []
-  Monom.init(var, fun)
-  for i, g in enumerate(var):
-    globals()[g] = Poly(Monom(i))
-
+  var = 'a, b, c, d'.split(', ')
+  var = Poly.init(var)
+  a, b, c, d = var
   cyclic4 = Janet()
   q = cyclic4.insert(Wrap(p) for p in (\
-    a, b**2, b*c**2, b*c*d**2,\
-    b*d**4, c**2*d**4, c**3*d**2))
+  a, b**2, b*c**2, b*c*d**2,\
+  b*d**4, c**2*d**4, c**3*d**2))
   assert q == []
   cyclic4.saveImage('cyclic4.pdf', level=3)
-
-  for i in range(2, 7):
-    assert cyclic4.degMinProlong() == i
-    q = cyclic4.prolong(i)
-    print(f"prolong {i}, len({len(q)}), {[w for w in q if not cyclic4.find(w.lm)]}")
 
   lst = [Wrap(p) for p in (c**2, d**4)]
   q = cyclic4.insert(lst)
@@ -557,7 +596,7 @@ if __name__ == '__main__':
   cyclic4.saveImage('cyclic41.pdf', level=3)
 
   lst1 = [Wrap(lst[0], 0), Wrap(lst[0], 1),\
-    Wrap(lst[1], 0), Wrap(lst[1], 1), Wrap(lst[1], 2)]
+      Wrap(lst[1], 0), Wrap(lst[1], 1), Wrap(lst[1], 2)]
   q = cyclic4.insert([w for w in lst1 if not cyclic4.find(w.lm)])
   pprint(q)
   cyclic4.saveImage('cyclic42.pdf', level=3)
@@ -567,23 +606,21 @@ if __name__ == '__main__':
   pprint(q)
   cyclic4.saveImage('cyclic43.pdf', level=3)
 
-  var = ['a', 'b', 'c']
-  fun = []
-  Monom.init(var, fun)
+  var = 'a, b, c'.split(', ')
+  var = Poly.init(var)
+  a, b, c = var
   Monom.cmp = Monom.TOPdeglex
-  for i, g in enumerate(var):
-    globals()[g] = Poly(Monom(i))
   perm3 = Janet()
   q = perm3.insert(Wrap(p) for p in (a**3, b**3, c**3))
   assert q == []
 
   for i in range(3, 8):
-    print(perm3.degMinProlong())
-    assert perm3.degMinProlong() == i
-    q = perm3.prolong(i)
-    print(f"prolong {i}")
-    pprint(q)
-    perm3.insert(w for w in q if not perm3.find(w.lm))
+      print(perm3.degMinProlong())
+      assert perm3.degMinProlong() == i
+      q = perm3.prolongDeg(i)
+      print(f"prolong {i}")
+      pprint(q)
+      perm3.insert(w for w in q if not perm3.find(w.lm))
 
   perm3.saveImage('perm3.pdf', level=3)
 
@@ -592,3 +629,53 @@ if __name__ == '__main__':
       print()
       print(w)
 
+  print(perm3.find(Monom((3, 3, 3))))
+  print(perm3.find(Monom((2, 3, 3))))
+  print(perm3.find(Monom((2, 2, 3))))
+  print(perm3.find(Monom((2, 2, 2))))
+
+  Monom.cmp = Monom.TOPdeglex
+  x, y = Poly.init('x, y'.split(', '))
+  моnоmial = Janet()
+  print(моnоmial.insert(Wrap(p) for p in (x**7*y, x**5*y**2, x**4*y**3, x**2*y**4)))
+  моnоmial.saveImage('monomial.pdf', level=3)
+
+  for w in моnоmial:
+      print(w)
+
+  print(f"{моnоmial.HP()!r}")
+  моnоmial.clear()
+  print(f"{моnоmial.HP()!r}")
+
+
+  моnоmial.insert([Wrap(x**0)])
+  print(f"{моnоmial.HP()!r}")
+
+  p = (x + y**2 -1)**3
+  p.NF(моnоmial)
+  print(f"{p!r}")
+
+  моnоmial.clear()
+  for w in моnоmial:
+      print(w)
+  моnоmial.insert([Wrap(x**0)])
+  print(f"{моnоmial.HP()!r}")
+
+
+  Monom.cmp = Monom.TOPdeglex
+  var = 'x1, x2, x3, x4'.split(', ')
+  fun = 'f, p1, p2, p3, p4'.split(', ')
+  var, fun = Poly.init(var, fun)
+  x1, x2, x3, x4 = var
+  f, p1, p2, p3, p4 = fun
+  cyclic4 = Forest(Janet)
+  cyclic4.insert([Wrap(f*x1 - p1)])
+  cyclic4.insert([Wrap(f*x2**2 - p2)])
+  cyclic4.insert([Wrap(f*x3**3 - p3)])
+  cyclic4.insert([Wrap(f*x4**4 - p4)])
+
+  for i in range(5):
+    print(f"HP: {cyclic4[i].HP()}")
+
+  cyclic4.clear()
+  print(f"HP clear: {cyclic4.HP()}")

@@ -1,5 +1,6 @@
 import sympy
 from sympy import S, Integer, gcd, lcm, cancel, expand, fraction
+
 from monomial import *
 
 class Poly(list):
@@ -93,6 +94,8 @@ class Poly(list):
         j += 1
       else:
         k = self[i][1] + other[j][1]
+        if not k.is_integer:
+          k = cancel(k)
         if k:
           p.append([self[i][0], k])
         i += 1
@@ -128,6 +131,8 @@ class Poly(list):
         j += 1
       else:
         k = self[i][1] - other[j][1]
+        if not k.is_integer:
+          k = cancel(k)
         if k:
           p.append([self[i][0], k])
         i += 1
@@ -402,6 +407,8 @@ class PolyDiff(Poly):
           r = r * PolyDiff.diff2poly(s)
       elif a.func == sympy.Pow:
         r = PolyDiff(Monom())*a
+      elif repr(a.func) in Monom._Monom__var:
+        r = PolyDiff(Monom(Monom._Monom__var.index(repr(a.func))))
       elif repr(a.func) in Monom._Monom__fun:
         r = PolyDiff(Monom(pos=Monom._Monom__fun.index(repr(a.func))))
       else:
@@ -447,8 +454,14 @@ class PolyDiff(Poly):
   def prolong(self, var):
     p1, p2 = PolyDiff(), PolyDiff()
     for m, k in self:
-      if m:
-        p1.append([m.prolong(var), k])
+      try:
+        if m.__bool__():
+          p1.append([m.prolong(var), k])
+      except TypeError:
+        print(f"{self!r}")
+        print(f"{type(m)}{m!r}, {type(k)}{k!r}")
+        print(f"{m.position()} {sum(m)} {m.__bool__()}")
+        assert not m
     for m, k in self:
       k = sympy.diff(k, PolyDiff.__var[var])
       if k:
@@ -537,168 +550,54 @@ class PolySchem(Poly):
       return " + ".join(r)
   
 if __name__ == '__main__':
+  from ginv import *
   sympy.init_printing()
 
-  var = ['a', 'b', 'c', 'd', 'e', 'f']
-  fun = ['u', 'v', 'w']
-  Monom.init(var, fun)
-
-  Monom.cmp = Monom.POTlex
-
-  for i, g in enumerate(var):
-    globals()[g] = Poly(Monom(i))
-  for i, g in enumerate(fun):
-    globals()[g] = Poly(Monom(pos=i))
-
-  print(repr(Poly()))
-  print(Poly())
-
-  alpha, beta, tau = sympy.symbols('alpha, beta, tau', real=True)
-  print(alpha)
-
-  print(repr(Poly(21546)))
-  print(Poly(21546))
-
-  print(repr(Poly(tau**4*21546)))
-  print(Poly(tau**4*21546))
-
-
-  h = u*c**5 + f*a*b*tau*1236537 + d*alpha
-  print(repr(h))
-
-  g = Poly(h)
-  print(g)
-
-  print(g != Poly(h))
-
-  print(h.lm(), h.lc())
-
-  print(g.prolong(4))
-
-  print(repr(g.diff(tau)))
-  print(g.diff(tau))
-
-  g.reduction(0, h)
-  print(g)
-
-  h *= (4*b**4 + f*tau + beta)**11
-  print(h)
-
-  h.NFtail(4*b**4 + f*tau + beta)
-  print(h)
-
-  h.NFhead(4*b**4 + f*tau + beta)
-  print(h)
-
-  h = (4*b**4 + a*b*c**2 + f*tau + beta)
-  h.reduce(a*b*c**2 + f*tau)
-  print(h)
-
-  h = (4*b**4 + a*b*c**2 + f*tau + beta)
-  h.reduce(a*b*c + f*tau)
-  print(h)
+  var = 'a, b, c, d, e'.split(', ')
+  print(Poly.init(var))
 
   var = 'a, b, c, d, e'.split(', ')
   fun = 'u, v, w'.split(', ')
-  print(PolyDiff.init(var, fun))
+  print(Poly.init(var, fun))
 
   Monom.cmp = Monom.POTlex # POTlex, TOPlex, POTdeglex, TOPdeglex
 
   var = 'a, b, c, d, e'.split(', ')
-  fun = 'u, v, w'.split(', ')
-  var, fun = PolyDiff.init(var, fun)
-  a, b, c, d, e = var
-  u, v, w = fun
-  df = PolyDiff.df
-  diff2poly = PolyDiff.diff2poly
-  p = sympy.diff(a**1*b**2*c**3*d**4*e**5, a, d, 2) + (2*df(w, b, a, 5, b, 2)*e**6 + 13)*a*b + 5 + df(u)
-  print(f"{p} \n-> {p!r}")
-  print(f"{p.df_sympy()} \n-> {p!r}")
-  print(f"{PolyDiff()} -> {PolyDiff()!r}") 
-
-  p_diff = sympy.diff(a**1*b**2*c**3*d**4*e**5, a, d, 2) +\
-      (2*sympy.diff(w(a, b, c, d, e), b, a, 5, b, 2)*e**6 + 13)*a*b + 5 +\
-      u(a, b, c, d, e)
-  print(p_diff)
-
-  p = diff2poly(p_diff)
-  print(f"{p} \n-> {p!r}")
-  print(f"{p.df_sympy()} \n-> {p!r}")
-  print(f"{PolyDiff()} -> {PolyDiff()!r}") 
-
-  par = sympy.symbols('alpha, beta, tau, delta, epsilon, zeta', real=True)
-  print(par)
-
-  p = PolyDiff(par[2]**4*21546/par[3])
-  print(f"{p} -> {p!r}")
-
-  p.cancel()
-  print(f"{p} -> {p!r}")
-
-  h = df(u, c, 5) + a**2*b*par[2]*1236537 + d*par[0]
-  print(f"{h} \n-> {h!r}")
-  print(f"{h.df_sympy()} \n-> {h!r}")
-
-  g = PolyDiff(h)
-  print(g != h)
-  print(g == h)
-  print(g > h)
-
-  print(h.lm(), h.lc())
-
-  p = g.prolong(4)
-  print(f"{p} \n-> {p!r}")
-  print(f"{p.df_sympy()} \n-> {p!r}")
-
-  g.reduction(0, h)
-  print(g)
-
-  h *= (4*b**4 + e*par[2] + par[1])**9
-  print(h)
-
-  h.NFtail(4*b**4 + e*par[2] + par[1])
-  print(h)
-
-  h.pp()
-  print(h)
-
-  print(type(p) == Poly)
-  print(type(p) == PolyDiff)
+  a, b, c, d, e = Poly.init(var)
+  3*a**1*b**2*c**3*d**4*e**5 + (2*a**5*b**2 + 13)*e**3 + 5
 
   var = 'a, b, c, d, e'.split(', ')
   fun = 'u, v, w'.split(', ')
-  print(PolySchem.init(var, fun))
-
-  Monom.cmp = Monom.POTlex # POTlex, TOPlex, POTdeglex, TOPdeglex
-
-  var = 'a, b, c, d, e'.split(', ')
-  fun = 'u, v, w'.split(', ')
-  var, fun = PolySchem.init(var, fun)
+  var, fun = Poly.init(var, fun)
   a, b, c, d, e = var
   u, v, w = fun
-  T = PolySchem.T
-  p = T(w, a, d, 2) + (2*T(w, b, a, 5, b, 2)*e**6 + 13)*a*b + T(u)
+  p = 3*a**1*b**2*c**3*d**4*e**5 + (2*u*a**5*b**2 + 13)*e**3 + 5 + w
   print(f"{p} \n-> {p!r}")
-  print(f"{PolySchem()} -> {PolySchem()!r}") 
+  print(f"{Poly()} -> {Poly()!r}")
+
+  Monom.cmp = Monom.TOPlex
+  p = 3*a**1*b**2*c**3*d**4*e**5 + (2*u*a**5*b**2 + 13)*e**3 + 5 + w
+  print(f"{p} \n-> {p!r}")
+  print(f"{Poly()} -> {Poly()!r}")
 
   Monom.cmp = Monom.TOPdeglex
-  p = T(w, a, d, 2) + (2*T(w, b, a, 5, b, 2)*e**6 + 13)*a*b + 5 + T(u)
+  p = 3*a**1*b**2*c**3*d**4*e**5 + (2*u*a**5*b**2 + 13)*e**3 + 5 + w
   print(f"{p} \n-> {p!r}")
-  print(f"{PolySchem()} -> {PolySchem()!r}") 
+  print(f"{Poly()} -> {Poly()!r}")
 
   par = sympy.symbols('alpha, beta, tau, delta, epsilon, zeta', real=True)
   print(par)
 
-  p = PolySchem(par[2]**4*21546/par[3])
+  p = Poly(par[2]**4*21546/par[3])
   print(f"{p} -> {p!r}")
 
   p.cancel()
   print(f"{p} -> {p!r}")
 
-  h = T(u, c, 5) + T(w, a, 2, b)*par[2]*1236537 + T(v)*d*par[0]
+  h = u*c**5 + a**2*b*par[2]*1236537 + d*par[0]
   print(f"{h} \n-> {h!r}")
 
-  g = PolySchem(h)
+  g = Poly(h)
   print(g != h)
   print(g == h)
   print(g > h)
@@ -706,6 +605,9 @@ if __name__ == '__main__':
   print(h.lm(), h.lc())
 
   p = g.prolong(4)
+  print(f"{p} \n-> {p!r}")
+
+  p = g.diff(par[2])
   print(f"{p} \n-> {p!r}")
 
   g.reduction(0, h)
@@ -717,9 +619,71 @@ if __name__ == '__main__':
   h.NFtail(4*b**4 + e*par[2] + par[1])
   print(h)
 
-  h.pp()
+  h.NFhead(4*b**4 + e*par[2] + par[1])
   print(h)
 
-  print(type(p) == Poly)
-  print(type(p) == PolyDiff)
-  print(type(p) == PolySchem)
+  h = (4*b**4 + a*b*c**2 + e*par[2] + par[1])
+  h.reduce(a*b*c**2 + e*par[2])
+  print(h)
+
+  h = (4*b**4 + a*b*c**2 + e*par[2] + par[1])
+  h.reduce(a*b*c + e*par[2])
+  print(h)
+
+  Monom.cmp = Monom.TOPdeglex
+  x, y = Poly.init('x, y'.split(', '))
+  mnm = Janet()
+  res = ginvBlockLow((x**7*y, x**5*y**2, x**4*y**3, x**2*y**4), \
+  mnm, level=1)
+  print(f"HP: {mnm.HP()}")
+  mnm.saveImage('mnm.png')
+
+  Monom.cmp = Monom.TOPdeglex
+  x1, x2, x3, x4 = Poly.init('x1, x2, x3, x4'.split(', '))
+  cyclic4 = Janet()
+  res = ginvBlockLow((
+  x1+x2+x3+x4,\
+  x1*x2+x2*x3+x3*x4+x4*x1,\
+  x1*x2*x3+x2*x3*x4+x3*x4*x1+x4*x1*x2,\
+  x1*x2*x3*x4-1), \
+  cyclic4, level=1)
+  print(f"    crit1: {res[1]}")
+  print(f"    crit2: {res[2]}")
+  print(f"     time: {res[0]:.2f} sec")
+  print(f"    count: {cyclic4.count()}")
+  print(f"reduction: {cyclic4.reduction()}")
+  print(f"       HP: {cyclic4.HP()}")
+  cyclic4.saveImage('cyclic4.pdf', level=3)
+
+  for w in cyclic4.GB():
+    print(w.poly)
+
+  x1, x2, x3, x4 = sympy.symbols('x1, x2, x3, x4')
+  for w in cyclic4.GB():
+    print(sympy.Add(*tuple(eval(f"{m}*{c}") for m, c in w.poly), evaluate=False))
+
+  Monom.cmp = Monom.TOPdeglex
+  var = 'x1, x2, x3, x4'.split(', ')
+  fun = 'f, p1, p2, p3, p4'.split(', ')
+  var, fun = Poly.init(var, fun)
+  x1, x2, x3, x4 = var
+  f, p1, p2, p3, p4 = fun
+  cyclic4 = Forest(Janet)
+  res = ginvMin((
+  f*(x1+x2+x3+x4) - p1,\
+  f*(x1*x2+x2*x3+x3*x4+x4*x1) - p2,\
+  f*(x1*x2*x3+x2*x3*x4+x3*x4*x1+x4*x1*x2) - p3,\
+  f*(x1*x2*x3*x4-1) - p4), \
+  cyclic4, level=1)
+  print(f"    crit1: {res[1]}")
+  print(f"    crit2: {res[2]}")
+  print(f"     time: {res[0]:.2f} sec")
+  print(f"    count: {cyclic4.count()}")
+  print(f"reduction: {cyclic4.reduction()}")
+  print(f"       HP: {cyclic4[0].HP()}")
+  cyclic4[0].saveImage('cyclic4_syzygy.png', level=3)
+
+  x1, x2, x3, x4 = sympy.symbols('x1, x2, x3, x4')
+  f, p1, p2, p3, p4 = sympy.symbols('f, p1, p2, p3, p4')
+  for w in cyclic4.GB():
+    print(eval(str(w.poly)).collect([f, p1, p2, p3, p4]))

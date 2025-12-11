@@ -405,13 +405,13 @@ HP: 2s^2 + 6s + 3
 $$
 \left\lbrace 
 \begin{array}{l}
-{u}_{{x}} + {v}_{{y}} ,\\
-{v}_{{x} {y}} - {u}_{{y} {y}} + {u}_{{t}} \mathrm{Re} + {p}_{{x}} \mathrm{Re} + {u2}_{{x}} \mathrm{Re} 
+\mathbf{{u}_{{x}}} + {v}_{{y}} ,\\
+\mathbf{{v}_{{x} {y}}} - {u}_{{y} {y}} + {u}_{{t}} \mathrm{Re} + {p}_{{x}} \mathrm{Re} + {u2}_{{x}} \mathrm{Re} 
 + {uv}_{{y}} \mathrm{Re} , \\
-{v}_{{x} {x}} + {v}_{{y} {y}} - {v}_{{t}} \mathrm{Re} - {uv}_{{x}} 
+\mathbf{{v}_{{x} {x}}} + {v}_{{y} {y}} - {v}_{{t}} \mathrm{Re} - {uv}_{{x}} 
 \mathrm{Re} - {p}_{{y}} \mathrm{Re} 
 - {v2}_{{y}} \mathrm{Re} , \\
-{p}_{{x} {x}}+ {u2}_{{x} {x}} + 2 {uv}_{{x} {y}} + {p}_{{y} {y}} 
+\mathbf{{p}_{{x} {x}} }+ {u2}_{{x} {x}} + 2 {uv}_{{x} {y}} + {p}_{{y} {y}} 
 + {v2}_{{y} {y}}.
 \end{array}
 \right. 
