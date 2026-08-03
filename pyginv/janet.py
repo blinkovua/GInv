@@ -609,7 +609,7 @@ if __name__ == '__main__':
   var = 'a, b, c'.split(', ')
   var = Poly.init(var)
   a, b, c = var
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   perm3 = Janet()
   q = perm3.insert(Wrap(p) for p in (a**3, b**3, c**3))
   assert q == []
@@ -634,7 +634,7 @@ if __name__ == '__main__':
   print(perm3.find(Monom((2, 2, 3))))
   print(perm3.find(Monom((2, 2, 2))))
 
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   x, y = Poly.init('x, y'.split(', '))
   моnоmial = Janet()
   print(моnоmial.insert(Wrap(p) for p in (x**7*y, x**5*y**2, x**4*y**3, x**2*y**4)))
@@ -662,7 +662,7 @@ if __name__ == '__main__':
   print(f"{моnоmial.HP()!r}")
 
 
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   var = 'x1, x2, x3, x4'.split(', ')
   fun = 'f, p1, p2, p3, p4'.split(', ')
   var, fun = Poly.init(var, fun)

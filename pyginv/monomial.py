@@ -251,7 +251,7 @@ class Monom(tuple):
         return -1
     return 0
 
-  def deglex(self, other):
+  def grevlex(self, other):
     d1, d2 = self.degree(), other.degree()
     if d1 > d2:
       return 1
@@ -284,16 +284,16 @@ class Monom(tuple):
     else:
       return -1
 
-  def POTdeglex(self, other):
+  def POTgrevlex(self, other):
     if self.__pos == other.__pos:
-      return self.deglex(other)
+      return self.grevlex(other)
     elif other.__pos == -1 or (self.__pos != -1 and self.__pos < other.__pos):
       return 1
     else:
       return -1
 
-  def TOPdeglex(self, other):
-    r = self.deglex(other)
+  def TOPgrevlex(self, other):
+    r = self.grevlex(other)
     if r:
       return r
     elif self.__pos == other.__pos:
@@ -406,9 +406,9 @@ if __name__ == '__main__':
 
   print(m1.POTlex(m2))
 
-  print(m1.TOPdeglex(m2))
+  print(m1.TOPgrevlex(m2))
 
-  Monom.cmp = Monom.POTlex # POTlex, TOPlex, POTdeglex, TOPdeglex
+  Monom.cmp = Monom.POTlex # POTlex, TOPlex, POTgrevlex, TOPgrevlex
 
   print(m2 < m1 <= m1)
 

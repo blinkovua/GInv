@@ -150,18 +150,20 @@ def ginvMin(pset, invdiv, level=0):
   t = time.time()
   q = Q(Wrap(p) for p in pset)
   while True:
-    m = q[0].lm if q else None
-    if level > 0:
-      if m:
-        print(f"prolong {m}")
-        q.push(invdiv.prolongMonom(m))
-      else:
-        print("prolongAll")
-        q.push(invdiv.prolongAll())
-    if not q:
-      break
+    if q:
+      if level > 0: print(f"prolong {q[0].lm}")
+      q.push(invdiv.prolongMonom(q[0].lm))
+    else:
+      if level > 0: print("prolongAll")
+      q.push(invdiv.prolongAll())
     r = q.reduceAll(invdiv)
-    if r:
+    if not r:
+      break
+    elif r.lm.position() == -1 and r.lm.degree() == 0:
+      invdiv.clear()
+      q.clear()
+      break
+    else:
       if tp == 1:
         r.poly.NFtail(invdiv)
         r.poly.pp()
@@ -182,7 +184,7 @@ def ginvMin(pset, invdiv, level=0):
 
 def ginvBlockLow(pset, invdiv, level=0):
   assert pset
-  assert Monom.cmp == Monom.TOPdeglex
+  assert Monom.cmp == Monom.TOPgrevlex
   if type(pset[0]) == Poly:
     tp = 0
   elif type(pset[0]) == PolyDiff:
@@ -193,17 +195,20 @@ def ginvBlockLow(pset, invdiv, level=0):
   t = time.time()
   q = Q(Wrap(p) for p in pset)
   while True:
-    j = q[0].degree() if q else 0
     i = invdiv.degMinProlong()
     if level > 0:
-      print(f"prolong {i}, Q {j}")
-    if i == 0 and j == 0:
+      print(f"prolong {i}, Q {q[0].degree() if q else -1}")
+    if i == 0 and not q: #TODO
       break
-    if j == 0 or 0 < i < j:
+    if not q or 0 < i < q[0].degree():
       q.push(invdiv.prolongDeg(i))
     res = q.reduceMinDegree(invdiv)
     if res:
       res = q.autoReduce(res)
+      if res[0].lm.position() == -1 and res[0].lm.degree() == 0:
+        invdiv.clear()
+        q.clear()
+        break
       if tp == 1:
         for r in res:
           r.poly.NFtail(invdiv)

@@ -45,7 +45,7 @@ class Poly(list):
         elif c == S.One:
           r.append(f"{m}")
         else:
-          r.append(f"{m}*{c}")
+          r.append(f"{m}*({c})")
       return " + ".join(r)
 
   def lm(self):
@@ -434,7 +434,7 @@ class PolyDiff(Poly):
         elif c == S.One:
           r.append(f"{m.df()}")
         else:
-          r.append(f"{m.df()}*{c}")
+          r.append(f"{m.df()}*({c})")
       return " + ".join(r)
 
   def df_sympy(self):
@@ -448,7 +448,7 @@ class PolyDiff(Poly):
         elif c == S.One:
           r.append(f"{m.df_sympy()}")
         else:
-          r.append(f"{m.df_sympy()}*{c}")
+          r.append(f"{m.df_sympy()}*({c})")
       return " + ".join(r)
     
   def prolong(self, var):
@@ -546,7 +546,7 @@ class PolySchem(Poly):
         elif c == S.One:
           r.append(f"{m.T()}")
         else:
-          r.append(f"{m.T()}*{c}")
+          r.append(f"{m.T()}*({c})")
       return " + ".join(r)
   
 if __name__ == '__main__':
@@ -560,7 +560,7 @@ if __name__ == '__main__':
   fun = 'u, v, w'.split(', ')
   print(Poly.init(var, fun))
 
-  Monom.cmp = Monom.POTlex # POTlex, TOPlex, POTdeglex, TOPdeglex
+  Monom.cmp = Monom.POTlex # POTlex, TOPlex, POTgrevlex, TOPgrevlex
 
   var = 'a, b, c, d, e'.split(', ')
   a, b, c, d, e = Poly.init(var)
@@ -580,7 +580,7 @@ if __name__ == '__main__':
   print(f"{p} \n-> {p!r}")
   print(f"{Poly()} -> {Poly()!r}")
 
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   p = 3*a**1*b**2*c**3*d**4*e**5 + (2*u*a**5*b**2 + 13)*e**3 + 5 + w
   print(f"{p} \n-> {p!r}")
   print(f"{Poly()} -> {Poly()!r}")
@@ -630,7 +630,7 @@ if __name__ == '__main__':
   h.reduce(a*b*c + e*par[2])
   print(h)
 
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   x, y = Poly.init('x, y'.split(', '))
   mnm = Janet()
   res = ginvBlockLow((x**7*y, x**5*y**2, x**4*y**3, x**2*y**4), \
@@ -638,7 +638,7 @@ if __name__ == '__main__':
   print(f"HP: {mnm.HP()}")
   mnm.saveImage('mnm.png')
 
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   x1, x2, x3, x4 = Poly.init('x1, x2, x3, x4'.split(', '))
   cyclic4 = Janet()
   res = ginvBlockLow((
@@ -662,7 +662,7 @@ if __name__ == '__main__':
   for w in cyclic4.GB():
     print(sympy.Add(*tuple(eval(f"{m}*{c}") for m, c in w.poly), evaluate=False))
 
-  Monom.cmp = Monom.TOPdeglex
+  Monom.cmp = Monom.TOPgrevlex
   var = 'x1, x2, x3, x4'.split(', ')
   fun = 'f, p1, p2, p3, p4'.split(', ')
   var, fun = Poly.init(var, fun)
